@@ -1,0 +1,20 @@
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - go build -v .
+
+  vendor:
+    cmds:
+      - go mod tidy
+      - go mod vendor
+  
+  run:
+    deps: [build]
+    cmds:
+      - ./kesplora-api
+  
+  test:
+    cmds:
+      - go test -v ./api
