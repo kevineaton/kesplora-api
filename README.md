@@ -1,6 +1,6 @@
 # Kesplora - API
 
-A research and training tool experiment. This is the API for the platform. When completed, the vision is that Kesplora is a self-hosted, open source tool to allow researchers to set up and conduct research on their own platform, including surveys, training, and reports. This is not designed as a marketing or product research tool but is intsead specifically geared towards academic research.
+A research and training tool experiment. This is the API for the platform. When completed, the vision is that Kesplora is a self-hosted, open source tool to allow researchers to set up and conduct research on their own platform, including surveys, training, and reports. This is not designed as a marketing or product research tool but is instead specifically geared towards academic research.
 
 This project sprung out of a doctoral research project that had unique needs. Those needs may not be relevant to everyone.
 
@@ -36,7 +36,7 @@ In the above, the researcher would be able to generate a `Report` of the `Partic
 
 ### Authentication
 
-The API supports `access_token` and `refresh_token`. The access_token is short lived and, once expired, a new on can be generated with a refresh_token. The refresh_token is provided in a cookie. However, not all clients can and do support cookies for the calls, so we also support providing the access_token as the `Authoritization: Bearer TOKEN` authorization method. In this flow, the `access_token` is provided and a 401 is returned if it is expired. If expired, the call to refresh the token should be made and the call re-tried.
+The API supports `access_token` and `refresh_token`. The access_token is short lived and, once expired, a new on can be generated with a refresh_token. The refresh_token is provided in a cookie. However, not all clients can and do support cookies for the calls, so we also support providing the access_token as the `Authorization: Bearer TOKEN` authorization method. In this flow, the `access_token` is provided and a 401 is returned if it is expired. If expired, the call to refresh the token should be made and the call re-tried.
 
 ## Contributing
 
