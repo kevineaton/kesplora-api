@@ -59,26 +59,17 @@ CREATE TABLE `Users` (
   `pronouns` varchar(32) NOT NULL DEFAULT '',
   `email` varchar(256) NOT NULL DEFAULT '',
   `password` varchar(64) NOT NULL,
+  `dateOfBirth` date NOT NULL DEFAULT '1970-01-01',
+  `participantCode` varchar(32) NOT NULL DEFAULT '',
   `status` enum('active','pending','locked','disabled') NOT NULL DEFAULT 'pending',
-  `systemRole` enum('user','admin') NOT NULL DEFAULT 'user',
+  `systemRole` enum('user','admin', 'participant') NOT NULL DEFAULT 'user',
   `createdOn` datetime NOT NULL,
   `lastLoginOn` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
+  KEY `email` (`email`),
+  KEY `participantCode` (`participantCode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
-CREATE TABLE `Participants` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `participantCode` varchar(32) NOT NULL DEFAULT '',
-  `firstName` varchar(32) NOT NULL DEFAULT '',
-  `lastName` varchar(32) NOT NULL DEFAULT '',
-  `email` varchar(32) NOT NULL DEFAULT '',
-  `password` varchar(64) NOT NULL DEFAULT '',
-  `dateOfBirth` date NOT NULL DEFAULT '1970-01-01',
-  `createdOn` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `participantCode` (`participantCode`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
 CREATE TABLE `ConsentForms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

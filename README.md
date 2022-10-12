@@ -48,10 +48,15 @@ Generally, we use the following casing:
 
 - Filenames are `snake_case` EXCEPT when the tooling requires otherwise (such as Taskfile, etc)
 - Variables are `camelCase`
-- JSON and ENUMs as `snake_case`
+- JSON properties are `camelCase` to match variables
+- ENUMs as `snake_case`
 - Structs and functions are either `TitleCase` or `camelCase` depending on visibility
 
 All dates and times will assume UTC. It is up to the client apps to render it in local time if desired.
+
+#### Structs
+
+Structs should have both `json` and `db` tags. At the bottom of every struct, there should be a `processForDB` and `processForAPI` method for the struct that handles things like datetime conversions. See, for example, `api/tokens.go`.
 
 ### Tools
 
