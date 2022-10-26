@@ -104,7 +104,7 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	if options.MustBeParticipant && user.SystemRole != UserSystemRoleParticipant {
 		results.IsValid = false
 		if options.ShouldSendError {
-			sendAPIError(w, api_error_auth_must_particiapnt, map[string]string{})
+			sendAPIError(w, api_error_auth_must_participant, map[string]string{})
 		}
 		return results
 	}
@@ -123,14 +123,14 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	return results
 }
 
-func testEndpoint(method string, endpoint string, data io.Reader, hendler http.HandlerFunc, accessToken string) (code int, body *bytes.Buffer, err error) {
+func testEndpoint(method string, endpoint string, data io.Reader, handler http.HandlerFunc, accessToken string) (code int, body *bytes.Buffer, err error) {
 	req, err := http.NewRequest(method, endpoint, data)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-	req.Header.Add("Authorization", "Beader: "+accessToken)
+	req.Header.Add("Authorization", "Header: "+accessToken)
 	rr := httptest.NewRecorder()
 	chi := SetupAPI()
 	chi.ServeHTTP(rr, req)

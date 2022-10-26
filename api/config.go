@@ -101,8 +101,8 @@ func SetupAPI() *chi.Mux {
 			user := jwtUser{}
 			expired := false
 
-			// first cookie, then authoritzation
-			accessCookie, err := r.Cookie("access")
+			// first cookie, then authorization
+			accessCookie, err := r.Cookie(tokenTypeAccess)
 			if err == nil && accessCookie != nil {
 				// try parsing
 				user, err = parseJWT(accessCookie.Value)

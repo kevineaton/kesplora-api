@@ -100,8 +100,8 @@ func GetUserByEmail(email string) (*User, error) {
 	return user, err
 }
 
-// GetUserByParticpantCode gets a user by the participant code
-func GetUserByParticpantCode(participantCode string) (*User, error) {
+// GetUserByParticipantCode gets a user by the participant code
+func GetUserByParticipantCode(participantCode string) (*User, error) {
 	user := &User{}
 	defer user.processForAPI()
 	err := config.DBConnection.Get(user, `SELECT * FROM Users WHERE participantCode = ?`, participantCode)
