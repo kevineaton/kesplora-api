@@ -26,7 +26,7 @@ const (
 	api_error_auth_missing          = "api_error_auth_missing"
 	api_error_auth_expired          = "api_error_auth_expired"
 	api_error_auth_must_admin       = "api_error_auth_must_admin"
-	api_error_auth_must_particiapnt = "api_error_auth_must_particiapnt"
+	api_error_auth_must_participant = "api_error_auth_must_participant"
 	api_error_auth_must_user        = "api_error_auth_must_user"
 
 	// user errors
