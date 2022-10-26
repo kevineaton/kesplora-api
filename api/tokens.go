@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"time"
 )
 
@@ -104,6 +105,33 @@ func generateToken(user *User, tokenType string) (*Token, error) {
 		Token:     tokenString,
 	}
 	return token, nil
+}
+
+func generateCookies(accessToken, refreshToken string) (accessCookie, refreshCookie *http.Cookie) {
+	accessCookie = &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Expires:  time.Now().Add(time.Minute * tokenExpiresMinutesAccess * 10),
+		MaxAge:   tokenExpiresMinutesAccess * 60 * 10,
+		Domain:   config.RootAPIDomain,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	refreshCookie = &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(time.Minute * tokenExpiresMinutesRefresh),
+		MaxAge:   tokenExpiresMinutesRefresh * 60,
+		Domain:   config.RootAPIDomain,
+		Path:     "/users/refresh",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	return
 }
 
 // randomString takes a length and returns a randomized string of that length with letters, numbers, hyphens, and underscores

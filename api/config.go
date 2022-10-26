@@ -22,6 +22,7 @@ var config *apiConfig = nil
 
 type apiConfig struct {
 	APIPort          string
+	RootAPIDomain    string
 	JWTSigningString string
 	SiteCode         string // needed if the site is pending and a new install
 	DBConnection     *sqlx.DB
@@ -37,11 +38,12 @@ func SetupConfig() *apiConfig {
 
 	config = &apiConfig{}
 	config.APIPort = envHelper("KESPLORA_API_API_PORT", "8080")
+	config.RootAPIDomain = envHelper("KESPLORA_DOMAIN", "localhost")
 	config.JWTSigningString = envHelper("KESPLORA_JWT_SIGNING", "")
 	if config.JWTSigningString == "" {
 		// probably a bad day, but we won't block it; we will want to output it, especially in multi-host installs
 		config.JWTSigningString = randomString(32)
-		fmt.Printf("\n------------------------------\nJWT Signing Key Generated: %s\n Why am I seeing this: No KESPLORA_JWT_SIGNING environment variable was provided\nso we generated a new one for you. You will need to capture this for future server installations.\n----------------------------\n")
+		fmt.Printf("\n------------------------------\nJWT Signing Key Generated: %s\n Why am I seeing this: No KESPLORA_JWT_SIGNING environment variable was provided\nso we generated a new one for you. You will need to capture this for future server installations.\n----------------------------\n", config.JWTSigningString)
 	}
 
 	// now we ensure we can connect to the DB
@@ -159,6 +161,11 @@ func SetupAPI() *chi.Mux {
 
 	r.Get("/setup", notImplementedRoute)
 	r.Post("/setup", notImplementedRoute)
+
+	// users
+	r.Post("/login", routeUserLogin)
+	r.Get("/me", routeGetUserProfile)
+	r.Patch("/me", routeUpdateUserProfile)
 
 	return r
 }

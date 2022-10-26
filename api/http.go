@@ -64,53 +64,6 @@ func sendAPIError(w http.ResponseWriter, key string, data interface{}) {
 	w.Write(response)
 }
 
-// apiErrorHelper is a helper to find the correct api error data
-func apiErrorHelper(key string) apiError {
-	if found, foundOK := apiErrors[key]; foundOK {
-		return found
-	}
-	return apiError{
-		Code:    http.StatusInternalServerError,
-		Message: "unknown error",
-	}
-}
-
-// apiError holds an API error dataset
-type apiError struct {
-	Code    int
-	Message string
-}
-
-const (
-	api_error_not_implemented = "api_error_not_implemented"
-
-	// auth
-	api_error_auth_missing          = "api_error_auth_missing"
-	api_error_auth_expired          = "api_error_auth_expired"
-	api_error_auth_must_admin       = "api_error_auth_must_admin"
-	api_error_auth_must_particiapnt = "api_error_auth_must_particiapnt"
-	api_error_auth_must_user        = "api_error_auth_must_user"
-)
-
-// apiErrors is a mapping of keys to data
-var apiErrors = map[string]apiError{
-	// general
-	api_error_not_implemented: {
-		Code:    http.StatusNotImplemented,
-		Message: "route not implemented",
-	},
-
-	// auth
-	api_error_auth_missing: {
-		Code:    http.StatusUnauthorized,
-		Message: "authorization missing",
-	},
-	api_error_auth_expired: {
-		Code:    419,
-		Message: "authorization expired",
-	},
-}
-
 func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *routePermissionsCheckOptions) *routePermissionsCheckResults {
 	// check if the access token is present
 	found := r.Context().Value(appContextKeyFound).(bool)
