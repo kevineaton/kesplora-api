@@ -13,6 +13,7 @@ func main() {
 	fmt.Printf("\nStarting...\n")
 	conf := api.SetupConfig()
 	r := api.SetupAPI()
+	api.CheckConfiguration() // determine if we need to set up a new site install
 
 	err := http.ListenAndServe(fmt.Sprintf(":%s", conf.APIPort), r)
 	if err != nil {

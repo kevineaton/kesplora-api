@@ -30,6 +30,7 @@ var dateFormats = []string{
 const (
 	timeFormatDB  = "2006-01-02 15:04:05"
 	timeFormatAPI = "2006-01-02T15:04:05Z"
+	dateFormat    = "2006-01-02"
 )
 
 // parseTime parses a time against the supported formats
