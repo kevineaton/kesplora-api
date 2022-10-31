@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -21,6 +22,7 @@ import (
 var config *apiConfig = nil
 
 type apiConfig struct {
+	Environment      string
 	APIPort          string
 	RootAPIDomain    string
 	JWTSigningString string
@@ -37,14 +39,10 @@ func SetupConfig() *apiConfig {
 	}
 
 	config = &apiConfig{}
+	config.Environment = envHelper("KESPLORA_ENVIRONMENT", "test")
 	config.APIPort = envHelper("KESPLORA_API_API_PORT", "8080")
 	config.RootAPIDomain = envHelper("KESPLORA_DOMAIN", "localhost")
 	config.JWTSigningString = envHelper("KESPLORA_JWT_SIGNING", "")
-	if config.JWTSigningString == "" {
-		// probably a bad day, but we won't block it; we will want to output it, especially in multi-host installs
-		config.JWTSigningString = randomString(32)
-		fmt.Printf("\n------------------------------\nJWT Signing Key Generated: %s\n Why am I seeing this: No KESPLORA_JWT_SIGNING environment variable was provided\nso we generated a new one for you. You will need to capture this for future server installations.\n----------------------------\n", config.JWTSigningString)
-	}
 
 	// now we ensure we can connect to the DB
 	dbConnectionString := envHelper("KESPLORA_API_DB_CONNECTION", "root:password@tcp(localhost:3306)/Kesplora")
@@ -74,6 +72,8 @@ func SetupConfig() *apiConfig {
 	}
 	config.DBConnection = conn
 
+	CheckConfiguration()
+
 	return config
 }
 
@@ -89,9 +89,9 @@ func SetupAPI() *chi.Mux {
 	// configure our middlewares here
 	r.Use(middleware.StripSlashes)
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	r.Use(middleware.RealIP) // TODO: make this optional
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.Timeout(120 * time.Second))
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 
 	// access token middleware
@@ -153,19 +153,24 @@ func SetupAPI() *chi.Mux {
 
 	// set up a Not Implemented handler just as a placeholder
 	notImplementedRoute := func(w http.ResponseWriter, r *http.Request) {
-		sendAPIError(w, api_error_not_implemented, nil)
+		sendAPIError(w, api_error_not_implemented, errors.New("not implemented"), map[string]string{})
 	}
 
 	// set up the routes
 	r.Get("/", routeApiStatusReady)
 
-	r.Get("/setup", notImplementedRoute)
-	r.Post("/setup", notImplementedRoute)
+	r.Get("/setup", routeGetSiteConfiguration)
+	r.Post("/setup", routeConfigureSite)
+
+	// sites
+	r.Get("/site", routeGetSite)
+	r.Patch("/site", routeUpdateSite)
 
 	// users
 	r.Post("/login", routeUserLogin)
 	r.Get("/me", routeGetUserProfile)
 	r.Patch("/me", routeUpdateUserProfile)
+	r.Post("/me/refresh", notImplementedRoute)
 
 	return r
 }
@@ -180,11 +185,36 @@ func envHelper(key, defaultValue string) string {
 }
 
 func CheckConfiguration() {
-	// this should check the db, make sure things are good to go, and set any required connection
-
+	// this should check the db, make sure things are good to go
 	// since the DB would have nuked before here, check if there's any users or site info
+	site, err := GetSite()
+	if err != nil || site.Status == "pending" {
+		// if not, show a code that allows a user to initiate the site
+		code := randomString(32)
+		config.SiteCode = code
+		fmt.Println("")
+		fmt.Printf("--------------------------------------------------------\n")
+		fmt.Printf("-- Your site is not configured, see the output below  --\n")
+		fmt.Printf("--  Site Code: %s       --\n", code)
+		fmt.Printf("--                                                    --\n")
+		fmt.Printf("-- Why am I seeing this?                              --\n")
+		fmt.Printf("-- The DB you supplied does not have an active site   --\n")
+		fmt.Printf("-- so you must configure it with the above code and   --\n")
+		fmt.Printf("-- the chosen client pointed at the API. See the docs. -\n")
+		fmt.Printf("--------------------------------------------------------\n")
+	}
 
-	// if not, show a code that allows a user to initiate the site
+	if config.JWTSigningString == "" {
+		// probably a bad day, but we won't block it; we will want to output it, especially in multi-host installs
+		config.JWTSigningString = randomString(32)
+		fmt.Println("")
+		fmt.Printf("-------------------------------------------------------------------\n")
+		fmt.Printf("-- JWT Signing Key Generated: %s   --\n", config.JWTSigningString)
+		fmt.Printf("--                                                               --\n")
+		fmt.Printf("-- Why am I seeing this: No KESPLORA_JWT_SIGNING environment     --\n")
+		fmt.Printf("-- variable was provided so we generated a new one for you.      --\n")
+		fmt.Printf("-- You will need to capture this for future server installations --\n")
+		fmt.Printf("-------------------------------------------------------------------\n")
+	}
 
-	// update the db
 }

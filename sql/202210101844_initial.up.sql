@@ -1,15 +1,21 @@
+DROP TABLE IF EXISTS `Site`;
 CREATE TABLE `Site` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `createdOn` datetime not null,
   `shortName` varchar(64) NOT NULL,
   `name` varchar(256) NOT NULL,
   `description` text NOT NULL,
   `domain` varchar(256) NOT NULL,
   `status` enum('pending','active','disabled') NOT NULL DEFAULT 'pending',
+  `projectListOptions` enum('show_all', 'show_active', 'show_none') NOT NULL DEFAULT 'show_active',
+  `siteTechnicalContact` varchar(2048) not null default '',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `Projects`;
 CREATE TABLE `Projects` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `siteId` int(11) NOT NULL,
   `name` varchar(128) NOT NULL,
   `shortDescription` varchar(1024) NOT NULL DEFAULT '',
   `description` text NOT NULL,
@@ -21,9 +27,11 @@ CREATE TABLE `Projects` (
   `participantMinimumAge` int(3) NOT NULL DEFAULT 0,
   `connectParticipantToConsentForm` enum('yes','no') DEFAULT NULL,
   PRIMARY KEY (`id`),
+  KEY `siteId` (`siteId`),
   KEY `status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `Flows`;
 CREATE TABLE `Flows` (
   `projectId` int(11) NOT NULL,
   `itemId` int(11) NOT NULL,
@@ -32,6 +40,7 @@ CREATE TABLE `Flows` (
   KEY `projectId` (`projectId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `Modules`;
 CREATE TABLE `Modules` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `projectId` int(11) NOT NULL,
@@ -40,6 +49,7 @@ CREATE TABLE `Modules` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `Blocks`;
 CREATE TABLE `Blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `moduleId` int(11) NOT NULL,
@@ -51,6 +61,7 @@ CREATE TABLE `Blocks` (
   KEY `blockType` (`blockType`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `Users`;
 CREATE TABLE `Users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(32) NOT NULL DEFAULT '',
@@ -70,7 +81,7 @@ CREATE TABLE `Users` (
   KEY `participantCode` (`participantCode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
-
+DROP TABLE IF EXISTS `ConsentForms`;
 CREATE TABLE `ConsentForms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `projectId` int(11) NOT NULL,
@@ -81,6 +92,7 @@ CREATE TABLE `ConsentForms` (
   KEY `projectId` (`projectId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `ConsentResponses`;
 CREATE TABLE `ConsentResponses` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `consentFormId` int(11) NOT NULL,
@@ -97,6 +109,7 @@ CREATE TABLE `ConsentResponses` (
   KEY `participantId` (`participantId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `Tokens`;
 CREATE TABLE `Tokens` (
   `userId` int(11) NOT NULL,
   `tokenType` enum('email','password_reset','refresh') NOT NULL DEFAULT 'email',

@@ -17,11 +17,11 @@ func routeUserLogin(w http.ResponseWriter, r *http.Request) {
 	input := loginInput{}
 	render.Bind(r, &input)
 	if input.Email == "" && input.ParticipantCode == "" {
-		sendAPIError(w, api_error_user_bad_data, map[string]string{})
+		sendAPIError(w, api_error_user_bad_data, nil, map[string]string{})
 		return
 	}
 	if input.Password == "" {
-		sendAPIError(w, api_error_user_bad_data, map[string]string{})
+		sendAPIError(w, api_error_user_bad_data, nil, map[string]string{})
 		return
 	}
 
@@ -34,7 +34,7 @@ func routeUserLogin(w http.ResponseWriter, r *http.Request) {
 		user, err = AttemptLoginForUser(input.ParticipantCode, input.Password)
 	}
 	if err != nil || user == nil || user.ID == 0 {
-		sendAPIError(w, api_error_user_bad_login, map[string]string{})
+		sendAPIError(w, api_error_user_bad_login, nil, map[string]string{})
 		return
 	}
 
@@ -47,7 +47,7 @@ func routeUserLogin(w http.ResponseWriter, r *http.Request) {
 		refreshToken, tokenErr = generateToken(user, tokenTypeRefresh)
 	}
 	if tokenErr != nil {
-		sendAPIError(w, "", map[string]string{})
+		sendAPIError(w, "", tokenErr, map[string]string{})
 		return
 	}
 	accessCookie, refreshCookie := generateCookies(accessToken, refreshToken.Token)
@@ -71,7 +71,7 @@ func routeGetUserProfile(w http.ResponseWriter, r *http.Request) {
 
 	user, err := GetUserByID(results.User.ID)
 	if err != nil {
-		sendAPIError(w, api_error_user_not_found, "user missing")
+		sendAPIError(w, api_error_user_not_found, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, user)
@@ -87,7 +87,7 @@ func routeUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := GetUserByID(results.User.ID)
 	if err != nil {
-		sendAPIError(w, api_error_user_not_found, "user missing")
+		sendAPIError(w, api_error_user_not_found, err, map[string]string{})
 		return
 	}
 
@@ -114,9 +114,7 @@ func routeUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	err = UpdateUser(user)
 	if err != nil {
-		sendAPIError(w, api_error_user_general, map[string]string{
-			"error": err.Error(),
-		})
+		sendAPIError(w, api_error_user_general, err, map[string]string{})
 	}
 	sendAPIJSONData(w, http.StatusOK, user)
 }

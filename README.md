@@ -8,6 +8,14 @@ This project sprung out of a doctoral research project that had unique needs. Th
 
 Very early stages. Structs, funcs, flows, and APIs will all change. Do not use this at this time! If you would like to assist, definitely reach out.
 
+## Set Up
+
+The current architecture is "one DB, one site". Although the `Sites` table has an ID, the current expectation is a single ID for a single site. This site is checked on startup to determine if the site should be set up or not. If the site's `status` field is `pending`, the configuration will output a code that needs to be sent up when configuring the site in order to make it `active`.
+
+For clients, when the app starts up, a configuration code will be output to the terminal. This is not stored anywhere. A call to GET `/site` will fail, but a call to GET `/setup` will state whether the site is already configured. Nothing will be saved in the DB at this point. The client should make a `POST` to `/setup` to configure the site. This is almost exactly like the call to PATCH `/site` but will also configure the user account and additional data as needed.
+
+So, the TLDR is on first set up, the client will need the configuration code, should GET to `/setup` and then POST to `/setup`.
+
 ## Major Concepts
 
 Once installed, an administrative `User` can configure the site as the admin. The `Site` is the installation, although multiple instances of the API can be a part of a site's installation (for example, for load balancing).
@@ -62,3 +70,11 @@ Structs should have both `json` and `db` tags. At the bottom of every struct, th
 
 - Task: Used in a similar matter to `make`. See `Taskfile.yml`
 - Migrate: Used to handle DB schema migrations
+
+## Roadmap
+
+We are still very early in development. If a struct or file has minimal code, it has not been fully thought out and is a place holder. Aside from functionality, there's a few non-functionality improvements:
+
+[ ] Add Redis and cache the site status on calls
+[ ] Add Open API Specification 3 files to document the API
+[ ] Add CI

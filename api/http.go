@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +26,7 @@ const appContextKeyExpired key = "expired"
 type apiReturn struct {
 	Data    interface{} `json:"data,omitempty"`
 	Message string      `json:"message,omitempty"`
-	Error   string      `json:"error,omitempty"`
+	Key     string      `json:"error,omitempty"`
 }
 
 type routePermissionsCheckOptions struct {
@@ -36,9 +37,11 @@ type routePermissionsCheckOptions struct {
 }
 
 type routePermissionsCheckResults struct {
-	IsExpired bool
-	IsValid   bool
-	User      *jwtUser
+	SiteActive bool
+	SiteStatus string
+	IsExpired  bool
+	IsValid    bool
+	User       *jwtUser
 }
 
 // sendAPIJSONData sends a JSON object for a successful API call
@@ -51,12 +54,16 @@ func sendAPIJSONData(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-// sendAPIError sends a JSON object for an API error
-func sendAPIError(w http.ResponseWriter, key string, data interface{}) {
+// sendAPIError sends a JSON object for an API error; note that the systemError is not sent back
+// to the client, so it is generally safe for system-level messaging; can be piped to error logs
+func sendAPIError(w http.ResponseWriter, key string, systemError error, data interface{}) {
 	apiErrorData := apiErrorHelper(key)
+	if systemError == nil {
+		systemError = errors.New(key) // we may want to have a config flag to output this
+	}
 	response, _ := json.Marshal(apiReturn{
 		Data:    data,
-		Error:   key,
+		Key:     key,
 		Message: apiErrorData.Message,
 	})
 	w.Header().Set("Content-Type", "application/json")
@@ -65,15 +72,32 @@ func sendAPIError(w http.ResponseWriter, key string, data interface{}) {
 }
 
 func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *routePermissionsCheckOptions) *routePermissionsCheckResults {
+	results := &routePermissionsCheckResults{}
+	// first, check if the site is active
+	site, err := GetSite()
+	if err != nil {
+		results.SiteActive = false
+		results.SiteStatus = "error"
+	} else {
+		results.SiteActive = site.Status == SiteStatusActive
+		results.SiteStatus = site.Status
+	}
+
+	if !results.SiteActive && options.ShouldSendError {
+		sendAPIError(w, api_error_auth_missing, errors.New("error"), map[string]string{
+			"siteStatus": results.SiteStatus,
+		})
+		return results
+	}
+
 	// check if the access token is present
 	found := r.Context().Value(appContextKeyFound).(bool)
 	user, userOK := r.Context().Value(appContextKeyUser).(jwtUser)
-	results := &routePermissionsCheckResults{}
 
 	if !found || !userOK {
 		if options.ShouldSendError {
 			results.IsValid = false
-			sendAPIError(w, api_error_auth_missing, map[string]string{})
+			sendAPIError(w, api_error_auth_missing, errors.New("error"), map[string]string{})
 		}
 		return results
 	}
@@ -84,7 +108,7 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 		results.IsValid = false
 		results.IsExpired = true
 		if options.ShouldSendError {
-			sendAPIError(w, api_error_auth_expired, map[string]string{})
+			sendAPIError(w, api_error_auth_expired, errors.New("error"), map[string]string{})
 		}
 		return results
 	}
@@ -95,7 +119,7 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	if options.MustBeAdmin && user.SystemRole != UserSystemRoleAdmin {
 		results.IsValid = false
 		if options.ShouldSendError {
-			sendAPIError(w, api_error_auth_must_admin, map[string]string{})
+			sendAPIError(w, api_error_auth_must_admin, errors.New("error"), map[string]string{})
 		}
 		return results
 	}
@@ -104,7 +128,7 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	if options.MustBeParticipant && user.SystemRole != UserSystemRoleParticipant {
 		results.IsValid = false
 		if options.ShouldSendError {
-			sendAPIError(w, api_error_auth_must_participant, map[string]string{})
+			sendAPIError(w, api_error_auth_must_participant, errors.New("error"), map[string]string{})
 		}
 		return results
 	}
@@ -113,7 +137,7 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	if options.MustBeUser != 0 && options.MustBeUser != user.ID {
 		results.IsValid = false
 		if options.ShouldSendError {
-			sendAPIError(w, api_error_auth_must_user, map[string]string{})
+			sendAPIError(w, api_error_auth_must_user, errors.New("error"), map[string]string{})
 		}
 		return results
 	}
@@ -135,4 +159,11 @@ func testEndpoint(method string, endpoint string, data io.Reader, handler http.H
 	chi := SetupAPI()
 	chi.ServeHTTP(rr, req)
 	return rr.Code, rr.Body, nil
+}
+
+func testEndpointResultToMap(bu *bytes.Buffer) (map[string]interface{}, error) {
+	m := map[string]interface{}{}
+	err := json.Unmarshal(bu.Bytes(), &m)
+	mm := m["data"].(map[string]interface{})
+	return mm, err
 }
