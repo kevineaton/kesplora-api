@@ -112,6 +112,12 @@ func (input *Site) processForDB() {
 	} else {
 		input.CreatedOn, _ = parseTimeToTimeFormat(input.CreatedOn, timeFormatDB)
 	}
+	if input.ProjectListOptions == "" {
+		input.ProjectListOptions = SiteProjectListOptionsActive
+	}
+	if input.Status == "" {
+		input.Status = SiteStatusPending
+	}
 }
 
 func (input *Site) processForAPI() {

@@ -31,12 +31,12 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, code)
 
 	input.Code = ""
-	input.Description = "# Site Description"
-	input.Domain = "site.kesplora.com"
-	input.Name = "Test Site"
-	input.ProjectListOptions = SiteProjectListOptionsActive
-	input.ShortName = "Test"
-	input.SiteTechnicalContact = "testing@kesplora.com"
+	input.Site.Description = "# Site Description"
+	input.Site.Domain = "site.kesplora.com"
+	input.Site.Name = "Test Site"
+	input.Site.ProjectListOptions = SiteProjectListOptionsActive
+	input.Site.ShortName = "Test"
+	input.Site.SiteTechnicalContact = "testing@kesplora.com"
 	input.AdminUser.Email = "testing@kesplora.com"
 	input.AdminUser.FirstName = "Admin"
 	input.AdminUser.LastName = "User"
@@ -58,12 +58,12 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 
 	site, err := GetSite()
 	assert.Nil(t, err)
-	assert.Equal(t, input.Description, site.Description)
-	assert.Equal(t, input.Domain, site.Domain)
-	assert.Equal(t, input.Name, site.Name)
-	assert.Equal(t, input.ProjectListOptions, site.ProjectListOptions)
-	assert.Equal(t, input.ShortName, site.ShortName)
-	assert.Equal(t, input.SiteTechnicalContact, site.SiteTechnicalContact)
+	assert.Equal(t, input.Site.Description, site.Description)
+	assert.Equal(t, input.Site.Domain, site.Domain)
+	assert.Equal(t, input.Site.Name, site.Name)
+	assert.Equal(t, input.Site.ProjectListOptions, site.ProjectListOptions)
+	assert.Equal(t, input.Site.ShortName, site.ShortName)
+	assert.Equal(t, input.Site.SiteTechnicalContact, site.SiteTechnicalContact)
 
 	// login to get the token
 	b.Reset()

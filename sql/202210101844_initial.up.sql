@@ -17,6 +17,7 @@ CREATE TABLE `Projects` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `siteId` int(11) NOT NULL,
   `name` varchar(128) NOT NULL,
+  `shortCode` varchar(16) NOT NULL DEFAULT '',
   `shortDescription` varchar(1024) NOT NULL DEFAULT '',
   `description` text NOT NULL,
   `status` enum('pending','active','disabled') NOT NULL DEFAULT 'pending',
@@ -29,6 +30,14 @@ CREATE TABLE `Projects` (
   PRIMARY KEY (`id`),
   KEY `siteId` (`siteId`),
   KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `ProjectUserLinks`;
+CREATE TABLE `ProjectUserLinks` (
+  `projectId` int(11) NOT NULL,
+  `userId` int(11) NOT NULL,
+  PRIMARY KEY (`projectId`, `userId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `Flows`;

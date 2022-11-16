@@ -7,9 +7,9 @@ import (
 )
 
 type siteConfigurationInput struct {
-	Site
+	Site      Site   `json:"site"`
 	Code      string `json:"code"`
-	AdminUser User
+	AdminUser User   `json:"user"`
 }
 
 // routeGetSiteConfiguration gets whether the site is configured or not
@@ -59,12 +59,12 @@ func routeConfigureSite(w http.ResponseWriter, r *http.Request) {
 
 	// set up the site
 	createdSite := &Site{
-		Name:                 input.Name,
-		ShortName:            input.ShortName,
-		Description:          input.Description,
-		ProjectListOptions:   input.ProjectListOptions,
-		Domain:               input.Domain,
-		SiteTechnicalContact: input.SiteTechnicalContact,
+		Name:                 input.Site.Name,
+		ShortName:            input.Site.ShortName,
+		Description:          input.Site.Description,
+		ProjectListOptions:   input.Site.ProjectListOptions,
+		Domain:               input.Site.Domain,
+		SiteTechnicalContact: input.Site.SiteTechnicalContact,
 		Status:               SiteStatusActive,
 	}
 	if exists {
@@ -96,13 +96,7 @@ func routeConfigureSite(w http.ResponseWriter, r *http.Request) {
 
 	sendAPIJSONData(w, http.StatusOK, map[string]interface{}{
 		"configured": true,
-		"site":       input.Site,
-		"user": User{
-			ID:        input.AdminUser.ID,
-			FirstName: input.AdminUser.FirstName,
-			LastName:  input.AdminUser.LastName,
-			Email:     input.AdminUser.Email,
-		},
+		"site":       createdSite,
 	})
 }
 

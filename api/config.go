@@ -21,6 +21,11 @@ import (
 
 var config *apiConfig = nil
 
+const (
+	Yes = "yes"
+	No  = "no"
+)
+
 type apiConfig struct {
 	Environment      string
 	APIPort          string
@@ -71,8 +76,6 @@ func SetupConfig() *apiConfig {
 		}
 	}
 	config.DBConnection = conn
-
-	CheckConfiguration()
 
 	return config
 }
@@ -143,9 +146,11 @@ func SetupAPI() *chi.Mux {
 	})
 
 	cors := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			return true // TODO: we probably want to let the setup set this in the config
+		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Types", "X-CSRF-TOKEN", "RANGE", "ACCEPT-RANGE"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-TOKEN", "RANGE", "ACCEPT-RANGE", "Access-Conrol-Allow-Origin"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	})
@@ -172,6 +177,34 @@ func SetupAPI() *chi.Mux {
 	r.Patch("/me", routeUpdateUserProfile)
 	r.Post("/me/refresh", notImplementedRoute)
 
+	// projects
+	r.Post("/projects", notImplementedRoute)
+	r.Get("/projects", notImplementedRoute)
+	r.Get("/projects/{projectID}", notImplementedRoute)
+	r.Patch("/projects/{projectID}", notImplementedRoute)
+
+	// project / users
+	r.Get("/projects/{projectID}/users", notImplementedRoute)
+	r.Post("/projects/{projectID}/users/{userID}", notImplementedRoute)
+
+	// modules, which includes flows
+	r.Post("/modules", notImplementedRoute)
+	r.Get("/modules", notImplementedRoute)
+	r.Get("/modules/{moduleID}", notImplementedRoute)
+	r.Patch("/modules/{moduleID}", notImplementedRoute)
+	r.Delete("/modules/{moduleID}", notImplementedRoute)
+	r.Put("/projects/{projectID}/modules/{moduleID}/{order}", notImplementedRoute)
+	r.Delete("/projects/{projectID}/modules/{moduleID}/{order}", notImplementedRoute)
+
+	// blocks
+	r.Post("/blocks", notImplementedRoute)
+	r.Get("/blocks", notImplementedRoute)
+	r.Get("/blocks/{blockID}", notImplementedRoute)
+	r.Patch("/blocks/{blockID}", notImplementedRoute)
+	r.Delete("/blocks/{blockID}", notImplementedRoute)
+	r.Put("/modules/{moduleID}/blocks/{blockID}/{order}", notImplementedRoute)
+	r.Delete("/modules/{moduleID}/{blockID}/{order}", notImplementedRoute)
+
 	return r
 }
 
@@ -193,15 +226,15 @@ func CheckConfiguration() {
 		code := randomString(32)
 		config.SiteCode = code
 		fmt.Println("")
-		fmt.Printf("--------------------------------------------------------\n")
-		fmt.Printf("-- Your site is not configured, see the output below  --\n")
-		fmt.Printf("--  Site Code: %s       --\n", code)
-		fmt.Printf("--                                                    --\n")
-		fmt.Printf("-- Why am I seeing this?                              --\n")
-		fmt.Printf("-- The DB you supplied does not have an active site   --\n")
-		fmt.Printf("-- so you must configure it with the above code and   --\n")
-		fmt.Printf("-- the chosen client pointed at the API. See the docs. -\n")
-		fmt.Printf("--------------------------------------------------------\n")
+		fmt.Printf("-------------------------------------------------------------------\n")
+		fmt.Printf("-- Your site is not configured, see the output below             --\n")
+		fmt.Printf("--  Site Code:     %s              --\n", code)
+		fmt.Printf("--                                                               --\n")
+		fmt.Printf("-- Why am I seeing this?                                         --\n")
+		fmt.Printf("-- The DB you supplied does not have an active site              --\n")
+		fmt.Printf("-- so you must configure it with the above code and              --\n")
+		fmt.Printf("-- the chosen client pointed at the API. See the docs.           --\n")
+		fmt.Printf("-------------------------------------------------------------------\n")
 	}
 
 	if config.JWTSigningString == "" {
@@ -213,7 +246,7 @@ func CheckConfiguration() {
 		fmt.Printf("--                                                               --\n")
 		fmt.Printf("-- Why am I seeing this: No KESPLORA_JWT_SIGNING environment     --\n")
 		fmt.Printf("-- variable was provided so we generated a new one for you.      --\n")
-		fmt.Printf("-- You will need to capture this for future server installations --\n")
+		fmt.Printf("-- You will need to capture this for future server installations.--\n")
 		fmt.Printf("-------------------------------------------------------------------\n")
 	}
 
