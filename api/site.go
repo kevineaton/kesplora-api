@@ -31,6 +31,7 @@ type Site struct {
 // GetSite gets the site from the DB
 func GetSite() (*Site, error) {
 	site := &Site{}
+	// TODO: cache this
 	defer site.processForAPI()
 	err := config.DBConnection.Get(site, `SELECT * FROM Site LIMIT 1`)
 	return site, err
@@ -64,6 +65,13 @@ func CreateSite(input *Site) error {
 	return nil
 }
 
+func createTestSite(defaults *Site) error {
+	if defaults == nil {
+		defaults = &Site{}
+	}
+	return CreateSite(defaults)
+}
+
 // UpdateSite updates a site
 func UpdateSite(input *Site) error {
 	input.processForDB()
@@ -78,17 +86,6 @@ func UpdateSite(input *Site) error {
 	projectListOptions = :projectListOptions,
 	siteTechnicalContact = :siteTechnicalContact
 	WHERE id = :id`, input)
-	return err
-}
-
-// deleteSiteByID deletes a site and really should only be used for testing purposes; if you
-// want to make a site unavailable, it's better to mark it as disabled
-func deleteSiteByID(siteID int64) error {
-	_, err := config.DBConnection.Exec(`DELETE FROM Site WHERE id = ?`, siteID)
-	if err != nil {
-		return err
-	}
-	// as other models are built out, we need to delete them; this is effectively, in this initial version, a DB wipe
 	return err
 }
 
@@ -111,6 +108,12 @@ func (input *Site) processForDB() {
 		input.CreatedOn = time.Now().Format(timeFormatDB)
 	} else {
 		input.CreatedOn, _ = parseTimeToTimeFormat(input.CreatedOn, timeFormatDB)
+	}
+	if input.ProjectListOptions == "" {
+		input.ProjectListOptions = SiteProjectListOptionsActive
+	}
+	if input.Status == "" {
+		input.Status = SiteStatusPending
 	}
 }
 

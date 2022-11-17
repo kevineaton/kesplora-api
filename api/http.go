@@ -39,8 +39,10 @@ type routePermissionsCheckOptions struct {
 type routePermissionsCheckResults struct {
 	SiteActive bool
 	SiteStatus string
+	Site       *Site
 	IsExpired  bool
 	IsValid    bool
+	IsAdmin    bool
 	User       *jwtUser
 }
 
@@ -84,11 +86,13 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	}
 
 	if !results.SiteActive && options.ShouldSendError {
-		sendAPIError(w, api_error_auth_missing, errors.New("error"), map[string]string{
+		sendAPIError(w, api_error_site_not_active, errors.New("site not active"), map[string]string{
 			"siteStatus": results.SiteStatus,
 		})
 		return results
 	}
+
+	results.Site = site
 
 	// check if the access token is present
 	found := r.Context().Value(appContextKeyFound).(bool)
@@ -123,6 +127,7 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 		}
 		return results
 	}
+	results.IsAdmin = user.SystemRole == UserSystemRoleAdmin
 
 	// check if a participant
 	if options.MustBeParticipant && user.SystemRole != UserSystemRoleParticipant {
@@ -154,7 +159,7 @@ func testEndpoint(method string, endpoint string, data io.Reader, handler http.H
 	}
 
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
-	req.Header.Add("Authorization", "Header: "+accessToken)
+	req.Header.Add("Authorization", "Bearer: "+accessToken)
 	rr := httptest.NewRecorder()
 	chi := SetupAPI()
 	chi.ServeHTTP(rr, req)
@@ -165,5 +170,12 @@ func testEndpointResultToMap(bu *bytes.Buffer) (map[string]interface{}, error) {
 	m := map[string]interface{}{}
 	err := json.Unmarshal(bu.Bytes(), &m)
 	mm := m["data"].(map[string]interface{})
+	return mm, err
+}
+
+func testEndpointResultToSlice(bu *bytes.Buffer) ([]interface{}, error) {
+	m := map[string]interface{}{}
+	err := json.Unmarshal(bu.Bytes(), &m)
+	mm := m["data"].([]interface{})
 	return mm, err
 }

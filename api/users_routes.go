@@ -39,23 +39,11 @@ func routeUserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate the tokens and cookies
-	accessToken, expires, _ := generateJWT(user)
-	refreshToken, err := getTokenForUser(user.ID, tokenTypeRefresh)
-	var tokenErr error
-	if err != nil || refreshToken.Token == "" {
-		// generate both
-		refreshToken, tokenErr = generateToken(user, tokenTypeRefresh)
+	accessCookie, refreshCookie, err := userGenerateTokens(user)
+	if err == nil {
+		http.SetCookie(w, accessCookie)
+		http.SetCookie(w, refreshCookie)
 	}
-	if tokenErr != nil {
-		sendAPIError(w, "", tokenErr, map[string]string{})
-		return
-	}
-	accessCookie, refreshCookie := generateCookies(accessToken, refreshToken.Token)
-	http.SetCookie(w, accessCookie)
-	http.SetCookie(w, refreshCookie)
-	user.Access = accessToken
-	user.Refresh = refreshToken.Token
-	user.Expires = expires
 
 	sendAPIJSONData(w, http.StatusOK, user)
 }

@@ -17,18 +17,27 @@ CREATE TABLE `Projects` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `siteId` int(11) NOT NULL,
   `name` varchar(128) NOT NULL,
+  `shortCode` varchar(16) NOT NULL DEFAULT '',
   `shortDescription` varchar(1024) NOT NULL DEFAULT '',
   `description` text NOT NULL,
-  `status` enum('pending','active','disabled') NOT NULL DEFAULT 'pending',
+  `status` enum('pending','active','disabled', 'completed') NOT NULL DEFAULT 'pending',
   `showStatus` enum('site','direct','no') NOT NULL DEFAULT 'site',
   `signupStatus` enum('open','with_code','closed') NOT NULL DEFAULT 'open',
   `maxParticipants` int(6) NOT NULL DEFAULT 0,
   `participantVisibility` enum('code','email','full') NOT NULL DEFAULT 'code',
   `participantMinimumAge` int(3) NOT NULL DEFAULT 0,
-  `connectParticipantToConsentForm` enum('yes','no') DEFAULT NULL,
+  `connectParticipantToConsentForm` enum('yes','no') NOT NULL DEFAULT 'yes',
   PRIMARY KEY (`id`),
   KEY `siteId` (`siteId`),
   KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `ProjectUserLinks`;
+CREATE TABLE `ProjectUserLinks` (
+  `projectId` int(11) NOT NULL,
+  `userId` int(11) NOT NULL,
+  PRIMARY KEY (`projectId`, `userId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `Flows`;

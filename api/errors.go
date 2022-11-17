@@ -22,6 +22,9 @@ type apiError struct {
 const (
 	api_error_not_implemented = "api_error_not_implemented"
 
+	// general
+	api_error_invalid_path = "api_error_invalid_path"
+
 	// auth
 	api_error_auth_missing          = "api_error_auth_missing"
 	api_error_auth_expired          = "api_error_auth_expired"
@@ -44,6 +47,15 @@ const (
 	api_error_user_cannot_save = "api_error_cannot_save"
 	api_error_user_bad_data    = "api_error_user_bad_data"
 	api_error_user_bad_login   = "api_error_user_bad_login"
+
+	// project errors
+	api_error_project_missing_data       = "api_error_project_missing_data"
+	api_error_project_save_error         = "api_error_project_save_error"
+	api_error_project_no_projects_found  = "api_error_project_no_projects_found"
+	api_error_project_not_found          = "api_error_project_not_found"
+	api_error_project_link_err           = "api_error_project_link_err"
+	api_error_project_unlink_err         = "api_error_project_unlink_err"
+	api_error_project_signup_unavailable = "api_error_project_signup_unavailable"
 )
 
 // apiErrors is a mapping of keys to data
@@ -52,6 +64,10 @@ var apiErrors = map[string]apiError{
 	api_error_not_implemented: {
 		Code:    http.StatusNotImplemented,
 		Message: "route not implemented",
+	},
+	api_error_invalid_path: {
+		Code:    http.StatusBadRequest,
+		Message: "invalid path",
 	},
 
 	// auth
@@ -62,6 +78,18 @@ var apiErrors = map[string]apiError{
 	api_error_auth_expired: {
 		Code:    419,
 		Message: "authorization expired",
+	},
+	api_error_auth_must_admin: {
+		Code:    http.StatusForbidden,
+		Message: "must be an admin",
+	},
+	api_error_auth_must_participant: {
+		Code:    http.StatusForbidden,
+		Message: "must be a participant",
+	},
+	api_error_auth_must_user: {
+		Code:    http.StatusForbidden,
+		Message: "must be a user",
 	},
 
 	// config
@@ -108,5 +136,35 @@ var apiErrors = map[string]apiError{
 	api_error_user_bad_login: {
 		Code:    http.StatusForbidden,
 		Message: "user login failed",
+	},
+
+	// projects
+	api_error_project_missing_data: {
+		Code:    http.StatusBadRequest,
+		Message: "missing data",
+	},
+	api_error_project_save_error: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save that project",
+	},
+	api_error_project_no_projects_found: {
+		Code:    http.StatusForbidden,
+		Message: "no projects available",
+	},
+	api_error_project_not_found: {
+		Code:    http.StatusForbidden,
+		Message: "project not found or unavailable to user",
+	},
+	api_error_project_link_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not link that user and project",
+	},
+	api_error_project_unlink_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not unlink that user and project",
+	},
+	api_error_project_signup_unavailable: {
+		Code:    http.StatusBadRequest,
+		Message: "sign up unavailable",
 	},
 }
