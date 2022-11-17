@@ -124,9 +124,11 @@ func SetupAPI() *chi.Mux {
 						access = parts[1]
 					}
 				}
-				user, err = parseJWT(access)
-				if err == nil && user.ID != 0 {
-					found = true
+				if access != "" {
+					user, err = parseJWT(access)
+					if err == nil && user.ID != 0 {
+						found = true
+					}
 				}
 			}
 
@@ -178,14 +180,15 @@ func SetupAPI() *chi.Mux {
 	r.Post("/me/refresh", notImplementedRoute)
 
 	// projects
-	r.Post("/projects", notImplementedRoute)
-	r.Get("/projects", notImplementedRoute)
-	r.Get("/projects/{projectID}", notImplementedRoute)
-	r.Patch("/projects/{projectID}", notImplementedRoute)
+	r.Post("/projects", routeCreateProject)
+	r.Get("/projects", routeGetProjects)
+	r.Get("/projects/{projectID}", routeGetProject)
+	r.Patch("/projects/{projectID}", routeUpdateProject)
 
 	// project / users
 	r.Get("/projects/{projectID}/users", notImplementedRoute)
-	r.Post("/projects/{projectID}/users/{userID}", notImplementedRoute)
+	r.Post("/projects/{projectID}/users/{userID}", routeLinkUserAndProject)
+	r.Delete("/projects/{projectID}/users/{userID}", routeUnlinkUserAndProject)
 
 	// modules, which includes flows
 	r.Post("/modules", notImplementedRoute)
@@ -195,6 +198,10 @@ func SetupAPI() *chi.Mux {
 	r.Delete("/modules/{moduleID}", notImplementedRoute)
 	r.Put("/projects/{projectID}/modules/{moduleID}/{order}", notImplementedRoute)
 	r.Delete("/projects/{projectID}/modules/{moduleID}/{order}", notImplementedRoute)
+
+	// user / module progress
+	r.Put("/projects/{projectID}/modules/{moduleID}/users/{userID}/status", notImplementedRoute)
+	r.Delete("/projects/{projectID}/modules/{moduleID}/users/{userID}/status", notImplementedRoute)
 
 	// blocks
 	r.Post("/blocks", notImplementedRoute)
@@ -250,4 +257,18 @@ func CheckConfiguration() {
 		fmt.Printf("-------------------------------------------------------------------\n")
 	}
 
+}
+
+func setupTesting() {
+	SetupConfig()
+	SetupAPI()
+	_, err := GetSite()
+	if err != nil {
+		err = createTestSite(&Site{
+			Status: SiteStatusActive,
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
 }

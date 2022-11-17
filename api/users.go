@@ -2,6 +2,8 @@ package api
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -30,7 +32,7 @@ type User struct {
 	LastName        string `json:"lastName" db:"lastName"`
 	Pronouns        string `json:"pronouns" db:"pronouns"`
 	Email           string `json:"email" db:"email"`
-	Password        string `json:"password" db:"password"`
+	Password        string `json:"password,omitempty" db:"password"`
 	DateOfBirth     string `json:"dateOfBirth" db:"dateOfBirth"`
 	ParticipantCode string `json:"participantCode" db:"participantCode"`
 	Status          string `json:"status" db:"status"`
@@ -135,7 +137,7 @@ func AttemptLoginForUser(emailOrCode, password string) (*User, error) {
 	if !isValid {
 		return user, errors.New("password did not match")
 	}
-	// now, we need to set up the access and refresh tokens
+	user.processForAPI()
 	return user, nil
 }
 
@@ -143,6 +145,50 @@ func LogOutUser(userID int64) error {
 	// delete the refresh token so that when the access expires, it won't work
 	// for now, that's it
 	return deleteTokenForUser(userID, tokenTypeRefresh)
+}
+
+func userGenerateTokens(user *User) (accessCookie *http.Cookie, refreshCookie *http.Cookie, err error) {
+	accessToken, expires, _ := generateJWT(user)
+	refreshToken, err := getTokenForUser(user.ID, tokenTypeRefresh)
+	if err != nil || refreshToken.Token == "" {
+		// generate both
+		refreshToken, err = generateToken(user, tokenTypeRefresh)
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	accessCookie, refreshCookie = generateCookies(accessToken, refreshToken.Token)
+	user.Access = accessToken
+	user.Refresh = refreshToken.Token
+	user.Expires = expires
+	return
+}
+
+func createTestUser(defaults *User) error {
+	if defaults.Password == "" {
+		defaults.Password = fmt.Sprintf("test_P@%d!!", rand.Int63n(99999999999999))
+	}
+	if defaults.FirstName == "" {
+		defaults.FirstName = "Admin"
+	}
+	if defaults.LastName == "" {
+		defaults.LastName = "Admin"
+	}
+	if defaults.Email == "" {
+		defaults.Email = fmt.Sprintf("test_%d@kesplora.com", rand.Int63n(99999999999999))
+	}
+	if defaults.Status == "" {
+		defaults.Status = UserStatusActive
+	}
+	if defaults.SystemRole == "" {
+		defaults.SystemRole = UserSystemRoleUser
+	}
+	err := CreateUser(defaults)
+	if err != nil {
+		return err
+	}
+	_, _, err = userGenerateTokens(defaults)
+	return err
 }
 
 // jwtUser is a stripped down user for encoding into a jwt
@@ -161,7 +207,8 @@ type jwtUser struct {
 }
 
 type jwtClaims struct {
-	User jwtUser `json:"user"`
+	User    jwtUser `json:"user"`
+	Expires string  `json:"exp"`
 	jwt.StandardClaims
 }
 
@@ -204,6 +251,7 @@ func parseJWT(input string) (jwtUser, error) {
 		u := claims.User
 		return u, nil
 	}
+	fmt.Printf("\n\t\t2: %+v\n", err)
 	return jwtUser{}, errors.New("could not parse jwt")
 }
 

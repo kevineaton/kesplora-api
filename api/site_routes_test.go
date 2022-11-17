@@ -8,6 +8,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetupAndConfigRoutes(t *testing.T) {
@@ -15,10 +16,15 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 	b := new(bytes.Buffer)
 	encoder := json.NewEncoder(b)
 	encoder.Encode(map[string]string{})
-	defer deleteSite()
 
-	// this may break in the future, as most of the route tests will require a
-	// site, so we will need a suite of some sort
+	// we are going to see if there is a site already; if so, we don't
+	// want to accidentally delete the user's local install, so we will skip
+	// this instead of breaking stuff
+	exists, err := GetSite()
+	if err == nil && exists != nil && exists.ID > 0 {
+		t.Skip("Site already set up or exists, so skipping config tests")
+	}
+
 	code, _, err := testEndpoint(http.MethodGet, "/setup", b, routeGetSiteConfiguration, "")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, code)
@@ -50,11 +56,15 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 
 	// make the code right
 	b.Reset()
+	if config.SiteCode == "" {
+		// it was already configured, so let's pretend
+		config.SiteCode = "test"
+	}
 	input.Code = config.SiteCode
 	encoder.Encode(input)
 	code, res, err := testEndpoint(http.MethodPost, "/setup", b, routeConfigureSite, "")
 	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, code, res)
+	require.Equal(t, http.StatusOK, code, res)
 
 	site, err := GetSite()
 	assert.Nil(t, err)

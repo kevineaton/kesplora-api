@@ -14,7 +14,7 @@ const (
 	tokenExpiresMinutesEmail         = 30
 	tokenExpiresMinutesPasswordReset = 30
 	tokenExpiresMinutesRefresh       = 60 * 24 * 7
-	tokenExpiresMinutesAccess        = 10
+	tokenExpiresMinutesAccess        = 60 * 12 // for testing purposes, we will make this really long; once we go for release, shorten
 
 	tokenTypeEmail         = "email"
 	tokenTypePasswordReset = "password_reset"
@@ -111,7 +111,7 @@ func generateCookies(accessToken, refreshToken string) (accessCookie, refreshCoo
 	accessCookie = &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
-		Expires:  time.Now().Add(time.Minute * tokenExpiresMinutesAccess * 10),
+		Expires:  time.Now().Add(time.Minute * tokenExpiresMinutesAccess),
 		MaxAge:   tokenExpiresMinutesAccess * 60 * 10,
 		Domain:   config.RootAPIDomain,
 		Path:     "/",

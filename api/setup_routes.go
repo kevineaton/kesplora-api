@@ -48,7 +48,9 @@ func routeConfigureSite(w http.ResponseWriter, r *http.Request) {
 		input.AdminUser.LastName == "" ||
 		input.AdminUser.Email == "" ||
 		input.AdminUser.Password == "" {
-		sendAPIError(w, api_error_config_missing_data, nil, map[string]string{})
+		sendAPIError(w, api_error_config_missing_data, nil, map[string]interface{}{
+			"input": input,
+		})
 		return
 	}
 
