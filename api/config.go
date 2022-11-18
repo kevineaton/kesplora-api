@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 )
 
 var config *apiConfig = nil
@@ -29,6 +30,7 @@ const (
 type apiConfig struct {
 	Environment      string
 	APIPort          string
+	LogLevelOutput   string
 	RootAPIDomain    string
 	JWTSigningString string
 	SiteCode         string // needed if the site is pending and a new install
@@ -48,6 +50,27 @@ func SetupConfig() *apiConfig {
 	config.APIPort = envHelper("KESPLORA_API_API_PORT", "8080")
 	config.RootAPIDomain = envHelper("KESPLORA_DOMAIN", "localhost")
 	config.JWTSigningString = envHelper("KESPLORA_JWT_SIGNING", "")
+
+	config.LogLevelOutput = strings.ToUpper(envHelper("KESPLORA_LOG_LEVEL", "WARN"))
+	log.SetFormatter((&log.JSONFormatter{}))
+	switch config.LogLevelOutput {
+	case LogLevelTrace:
+		log.SetLevel(log.TraceLevel)
+	case LogLevelDebug:
+		log.SetLevel(log.DebugLevel)
+	case LogLevelInfo:
+		log.SetLevel(log.InfoLevel)
+	case LogLevelWarn:
+		log.SetLevel(log.WarnLevel)
+	case LogLevelError:
+		log.SetLevel(log.ErrorLevel)
+	case LogLevelFatal:
+		log.SetLevel(log.FatalLevel)
+	case LogLevelPanic:
+		log.SetLevel(log.PanicLevel)
+	default:
+		log.SetLevel(log.WarnLevel)
+	}
 
 	// now we ensure we can connect to the DB
 	dbConnectionString := envHelper("KESPLORA_API_DB_CONNECTION", "root:password@tcp(localhost:3306)/Kesplora")

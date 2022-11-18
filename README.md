@@ -80,3 +80,4 @@ We are still very early in development. If a struct or file has minimal code, it
 [ ] Add Redis and cache the site status on calls
 [ ] Add Open API Specification 3 files to document the API
 [ ] Add CI
+[ ] Add hcaptcha for signups and setups
