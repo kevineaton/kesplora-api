@@ -71,6 +71,14 @@ func sendAPIError(w http.ResponseWriter, key string, systemError error, data int
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(apiErrorData.Code)
 	w.Write(response)
+
+	// log it
+	Log(LogLevelError, "http_error", key, &LogOptions{
+		ExtraData: map[string]interface{}{
+			"data":  data,
+			"error": systemError.Error(),
+		},
+	})
 }
 
 func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *routePermissionsCheckOptions) *routePermissionsCheckResults {
