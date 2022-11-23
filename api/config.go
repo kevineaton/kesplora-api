@@ -214,17 +214,16 @@ func SetupAPI() *chi.Mux {
 	r.Delete("/projects/{projectID}/users/{userID}", routeUnlinkUserAndProject)
 
 	// modules, which includes flows
-	r.Post("/modules", notImplementedRoute)
-	r.Get("/modules", notImplementedRoute)
-	r.Get("/modules/{moduleID}", notImplementedRoute)
-	r.Patch("/modules/{moduleID}", notImplementedRoute)
-	r.Delete("/modules/{moduleID}", notImplementedRoute)
-	r.Put("/projects/{projectID}/modules/{moduleID}/{order}", notImplementedRoute)
-	r.Delete("/projects/{projectID}/modules/{moduleID}/{order}", notImplementedRoute)
+	r.Post("/modules", routeCreateModule)
+	r.Get("/modules", routeGetAllSiteModules)
+	r.Get("/modules/{moduleID}", routeGetModuleByID)
+	r.Patch("/modules/{moduleID}", routeUpdateModule)
+	r.Delete("/modules/{moduleID}", routeDeleteModule)
 
-	// user / module progress
-	r.Put("/projects/{projectID}/modules/{moduleID}/users/{userID}/status", notImplementedRoute)
-	r.Delete("/projects/{projectID}/modules/{moduleID}/users/{userID}/status", notImplementedRoute)
+	// project / module links
+	r.Get("/projects/{projectID}/flow", routeGetModulesOnProject)
+	r.Put("/projects/{projectID}/modules/{moduleID}/{order}", routeSaveModuleOnProject)
+	r.Delete("/projects/{projectID}/modules/{moduleID}", routeRemoveModuleFromProject)
 
 	// blocks
 	r.Post("/blocks", notImplementedRoute)
@@ -234,6 +233,10 @@ func SetupAPI() *chi.Mux {
 	r.Delete("/blocks/{blockID}", notImplementedRoute)
 	r.Put("/modules/{moduleID}/blocks/{blockID}/{order}", notImplementedRoute)
 	r.Delete("/modules/{moduleID}/{blockID}/{order}", notImplementedRoute)
+
+	// user / block progress
+	r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
+	r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
 
 	return r
 }

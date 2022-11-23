@@ -56,6 +56,14 @@ const (
 	api_error_project_link_err           = "api_error_project_link_err"
 	api_error_project_unlink_err         = "api_error_project_unlink_err"
 	api_error_project_signup_unavailable = "api_error_project_signup_unavailable"
+
+	// module errors
+	api_error_module_missing_data = "api_error_module_missing_data"
+	api_error_module_save_error   = "api_error_module_save_error"
+	api_error_module_not_found    = "api_error_module_not_found"
+	api_error_module_link_err     = "api_error_module_link_err"
+	api_error_module_unlink_err   = "api_error_module_unlink_err"
+	api_error_module_delete_err   = "api_error_module_delete_err"
 )
 
 // apiErrors is a mapping of keys to data
@@ -166,5 +174,31 @@ var apiErrors = map[string]apiError{
 	api_error_project_signup_unavailable: {
 		Code:    http.StatusBadRequest,
 		Message: "sign up unavailable",
+	},
+
+	// modules
+	api_error_module_missing_data: {
+		Code:    http.StatusBadRequest,
+		Message: "missing data",
+	},
+	api_error_module_save_error: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save",
+	},
+	api_error_module_not_found: {
+		Code:    http.StatusNotFound,
+		Message: "module not found",
+	},
+	api_error_module_link_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not link that module and project",
+	},
+	api_error_module_unlink_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not unlink that module and project",
+	},
+	api_error_module_delete_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not delete the module",
 	},
 }

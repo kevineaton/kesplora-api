@@ -28,7 +28,7 @@ A `Project` is configured with `Flows` that connect `Modules`. A `Module` consis
 - `Survey` to gather responses
 - `Presentation` for either `Video`, `PDF`, `Download`, or `External` resources the `Participant` will complete.
 
-Since `Consent` is critical, it exists separate from a `Module` and will often be the first thing in a `Flow`.
+Since `Consent` is critical, it exists separate from a `Module`. The consent will be linked directly to a `Project` and must be provided prior to access to the `Project`.
 
 So, for example, you could have a theoretical `Project` that wants to measure data retention on a topic. Your `Project` could have the following `Flow`:
 
