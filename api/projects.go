@@ -1,6 +1,10 @@
 package api
 
-import "net/http"
+import (
+	"fmt"
+	"math/rand"
+	"net/http"
+)
 
 const (
 	ProjectStatusPending   = "pending"
@@ -149,6 +153,23 @@ func LinkUserAndProject(userID, projectID int64) error {
 func UnlinkUserAndProject(userID, projectID int64) error {
 	_, err := config.DBConnection.Exec("DELETE FROM ProjectUserLinks WHERE userId = ? AND projectId = ?", userID, projectID)
 	return err
+}
+
+// createTestProject is used for tests to create a test project
+func createTestProject(defaults *Project) error {
+	if defaults.Name == "" {
+		defaults.Name = fmt.Sprintf("Test Project %d", rand.Intn(9999999))
+	}
+	if defaults.Description == "" {
+		defaults.Description = "# Test Site\n\n *Do Not Use!*\n"
+	}
+	if defaults.ShortDescription == "" {
+		defaults.ShortDescription = "# Test Site\n\n *Do Not Use!*\n"
+	}
+	if defaults.Status == "" {
+		defaults.Status = ProjectStatusActive
+	}
+	return CreateProject(defaults)
 }
 
 func convertProjectToUserRet(input *Project) *ProjectAPIReturnNonAdmin {

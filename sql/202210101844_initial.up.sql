@@ -43,31 +43,50 @@ CREATE TABLE `ProjectUserLinks` (
 DROP TABLE IF EXISTS `Flows`;
 CREATE TABLE `Flows` (
   `projectId` int(11) NOT NULL,
-  `itemId` int(11) NOT NULL,
-  `itemType` enum('consent','module') NOT NULL DEFAULT 'module',
+  `moduleId` int(11) NOT NULL,
   `flowOrder` int(11) NOT NULL,
+  PRIMARY KEY (`projectId`, `moduleId`),
   KEY `projectId` (`projectId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `Modules`;
 CREATE TABLE `Modules` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `projectId` int(11) NOT NULL,
   `name` varchar(128) NOT NULL,
-  `status` enum('pending','active','disabled') DEFAULT NULL,
+  `status` enum('pending','active','disabled') DEFAULT 'pending',
+  `description` varchar(5096) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `Blocks`;
 CREATE TABLE `Blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `moduleId` int(11) NOT NULL,
-  `moduleOrder` int(11) NOT NULL DEFAULT 0,
+  `name` varchar(128) NOT NULL,
   `blockType` enum('other','sign_up','survey','presentation') NOT NULL DEFAULT 'other',
   `blockTypeId` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `moduleId` (`moduleId`),
   KEY `blockType` (`blockType`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockModuleFlows`;
+CREATE TABLE `BlockModuleFlows` (
+  `blockId` int(11) NOT NULL,
+  `moduleId` int(11) NOT NULL,
+  `flowOrder` int(11) NOT NULL,
+  PRIMARY KEY (`blockId`, `moduleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `BlockUserStatus`;
+CREATE TABLE `BlockUserStatus` (
+  `userId` int(11) NOT NULL,
+  `blockId` int(11) NOT NULL,
+  `moduleId` int(11) NOT NULL,
+  `projectId` int(11) NOT NULL,
+  `lastUpdatedOn` datetime NOT NULL,
+  `status` ENUM('not_started', 'started', 'completed') NOT NULL DEFAULT 'not_started',
+  PRIMARY KEY (`userId`, `blockId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `Users`;
