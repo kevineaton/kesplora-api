@@ -1,5 +1,8 @@
 version: '3'
 
+vars:
+  MYSQLURL: "mysql://{{.KESPLORA_API_DB_CONNECTION}}"
+
 tasks:
   build:
     cmds:
@@ -18,3 +21,35 @@ tasks:
   test:
     cmds:
       - go test -v ./api
+
+  db_up:
+    desc: Applies database migrations
+    cmds:
+      - migrate -path ./sql -database "{{.MYSQLURL}}" up
+
+  db_down:
+    desc: Applies database migrations
+    cmds:
+      - migrate -path ./sql -database "{{.MYSQLURL}}" down
+
+  cover:
+    desc: Runs coverage on the service
+    cmds:
+      - KESPLORA_API_ENVIRONMENT=test go test -v -mod=vendor ./api -coverprofile=coverage.out && go tool cover -html=coverage.out -o coverage.html
+
+  
+  docker-build:
+    desc: Build the Docker image but will not push it
+    cmds:
+      - docker build -f ./docker/Dockerfile -t kevineaton/kesplora-api:latest .
+
+  docker-push:
+    desc: Builds and tags the docker image then pushes it to Docker Hub
+    deps: [docker-build]
+    cmds:
+      - docker push kevineaton/kesplora-api:latest
+
+  docker-cover:
+    desc: Runs the latest built docker image and tests it
+    cmds:
+      - docker-compose -f ./docker/docker-compose.yml --project-name kesplora-api up --build --always-recreate-deps --force-recreate --abort-on-container-exit --exit-code-from kesplora-api
