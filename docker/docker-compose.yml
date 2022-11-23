@@ -4,6 +4,8 @@ services:
     image: kevineaton/kesplora-api:latest
     environment:
       - KESPLORA_API_DB_CONNECTION=root:password@tcp(db:3306)/Kesplora
+      - KESPLORA_API_CACHE_ADDRESS=cache:6379
+      - KESPLORA_API_CACHE_PASSWORD=xyzzy
     depends_on:
       - db
       - cache
