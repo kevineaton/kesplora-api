@@ -65,7 +65,6 @@ CREATE TABLE `Blocks` (
   `blockType` enum('other','sign_up','survey','presentation') NOT NULL DEFAULT 'other',
   `blockTypeId` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `moduleId` (`moduleId`),
   KEY `blockType` (`blockType`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
