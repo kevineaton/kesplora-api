@@ -1,0 +1,21 @@
+version: '3'
+services:
+  kesplora-api:
+    image: kevineaton/kesplora-api:latest
+    environment:
+      - KESPLORA_API_DB_CONNECTION=root:password@tcp(db:3306)/Kesplora
+    depends_on:
+      - db
+      - cache
+    volumes:
+      - ${PWD}:/go/src/github.com/kevineaton/kesplora-api
+    command: "bash -c 'wait-for-it -h db -p 3306 -t 180 && task db_up && task cover'"
+  db:
+    image: mysql:5.7
+    platform: linux/amd64
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=Kesplora
+  cache:
+    image: redis:4-alpine
+    command: ['--requirepass', 'xyzzy']
