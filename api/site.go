@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -13,6 +14,8 @@ const (
 	SiteProjectListOptionsAll    = "show_all"
 	SiteProjectListOptionsActive = "show_active"
 	SiteProjectListOptionsNone   = "show_none"
+
+	siteCacheMinutes = 60 * 24
 )
 
 // Site is an available location or installation
@@ -31,9 +34,19 @@ type Site struct {
 // GetSite gets the site from the DB
 func GetSite() (*Site, error) {
 	site := &Site{}
-	// TODO: cache this
+	cacheHit, err := config.CacheClient.Get(getSiteCacheKey()).Result()
+	if err == nil && len(cacheHit) > 0 {
+		err = json.Unmarshal([]byte(cacheHit), site)
+		if err == nil {
+			return site, nil
+		}
+	}
 	defer site.processForAPI()
-	err := config.DBConnection.Get(site, `SELECT * FROM Site LIMIT 1`)
+	err = config.DBConnection.Get(site, `SELECT * FROM Site LIMIT 1`)
+	if err == nil {
+		cacheData, _ := json.Marshal(site)
+		_, err = config.CacheClient.Set(getSiteCacheKey(), string(cacheData), siteCacheMinutes*time.Minute).Result()
+	}
 	return site, err
 }
 
@@ -62,7 +75,12 @@ func CreateSite(input *Site) error {
 		return err
 	}
 	input.ID, _ = res.LastInsertId()
-	return nil
+	// flush the cache
+	if err == nil {
+		cacheData, _ := json.Marshal(input)
+		_, err = config.CacheClient.Set(getSiteCacheKey(), string(cacheData), siteCacheMinutes*time.Minute).Result()
+	}
+	return err
 }
 
 func createTestSite(defaults *Site) error {
@@ -86,6 +104,11 @@ func UpdateSite(input *Site) error {
 	projectListOptions = :projectListOptions,
 	siteTechnicalContact = :siteTechnicalContact
 	WHERE id = :id`, input)
+	// flush the cache
+	if err == nil {
+		cacheData, _ := json.Marshal(input)
+		_, err = config.CacheClient.Set(getSiteCacheKey(), string(cacheData), siteCacheMinutes*time.Minute).Result()
+	}
 	return err
 }
 
@@ -98,6 +121,10 @@ func deleteSite() error {
 	}
 	// as other models are built out, we need to delete them; this is effectively, in this initial version, a DB wipe
 	return err
+}
+
+func getSiteCacheKey() string {
+	return "site" // putting this as a func in case we want to cache on the id for separation in the future
 }
 
 func (input *Site) processForDB() {

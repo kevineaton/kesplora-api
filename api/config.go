@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
+	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 )
@@ -35,6 +36,7 @@ type apiConfig struct {
 	JWTSigningString string
 	SiteCode         string // needed if the site is pending and a new install
 	DBConnection     *sqlx.DB
+	CacheClient      *redis.Client
 }
 
 // SetupConfig is a call to configure the basic required configuration options for the API
@@ -82,23 +84,49 @@ func SetupConfig() *apiConfig {
 
 	// make sure queries hit
 	_, err = conn.Exec("set session time_zone='-0:00'")
-	maxTies := 10
+	maxTries := 10
 	secondsBetweenTries := 5
 	if err != nil {
 		// try again until we decide we can try no longer
 		fmt.Printf("could not connect to db: %+v\ntrying again in %d seconds\n", err, secondsBetweenTries)
-		for i := 1; i <= maxTies; i++ {
+		for i := 1; i <= maxTries; i++ {
 			time.Sleep(time.Duration(secondsBetweenTries) * time.Second)
 			_, err = conn.Exec("set session time_zone='-0:00'")
 			if err == nil {
 				break
 			}
-			if i == maxTies {
+			if i == maxTries {
 				panic("could not connect to the MySQL database, shutting down")
 			}
 		}
 	}
 	config.DBConnection = conn
+
+	// now the cache
+
+	cacheAddress := envHelper("KESPLORA_API_CACHE_ADDRESS", "localhost:6379")
+	cachePassword := envHelper("KESPLORA_API_CACHE_PASSWORD", "")
+	config.CacheClient = redis.NewClient(&redis.Options{
+		Addr:     cacheAddress,
+		Password: cachePassword,
+		DB:       0,
+	})
+	_, err = config.CacheClient.Ping().Result()
+	if err != nil {
+		maxTries = 10
+		for i := 1; i <= maxTries; i++ {
+			fmt.Printf("\n Cache Error, this is attempt %d of %d. Waiting %d seconds...\n", i, maxTries, secondsBetweenTries)
+			fmt.Printf("\n\t %s\n", cacheAddress)
+			time.Sleep(time.Duration(secondsBetweenTries) * time.Second)
+			_, err = config.CacheClient.Ping().Result()
+			if err == nil {
+				break
+			}
+			if i == maxTries {
+				panic("Could not connect to the cache server, shutting down")
+			}
+		}
+	}
 
 	return config
 }
