@@ -83,12 +83,13 @@ func routeConfigureSite(w http.ResponseWriter, r *http.Request) {
 
 	// create the user
 	user := &User{
-		Title:     input.AdminUser.Title,
-		Email:     input.AdminUser.Email,
-		FirstName: input.AdminUser.FirstName,
-		LastName:  input.AdminUser.LastName,
-		Password:  input.AdminUser.Password,
-		Status:    UserStatusActive,
+		Title:      input.AdminUser.Title,
+		Email:      input.AdminUser.Email,
+		FirstName:  input.AdminUser.FirstName,
+		LastName:   input.AdminUser.LastName,
+		Password:   input.AdminUser.Password,
+		Status:     UserStatusActive,
+		SystemRole: UserSystemRoleAdmin,
 	}
 	err = CreateUser(user)
 	if err != nil {

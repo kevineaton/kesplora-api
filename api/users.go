@@ -40,7 +40,7 @@ type User struct {
 	CreatedOn       string `json:"createdOn" db:"createdOn"`
 	LastLoginOn     string `json:"lastLoginOn" db:"lastLoginOn"`
 	Access          string `json:"access"`
-	Refresh         string `json:"refresh"`
+	Refresh         string `json:"refresh"` // web clients should not store this in local storage and should instead use the cookies!
 	Expires         string `json:"expires"`
 }
 
@@ -83,6 +83,10 @@ func UpdateUser(input *User) error {
 func DeleteUser(userID int64) error {
 	// TODO: as we add other user entries, we should delete them here (things like progress, etc)
 	_, err := config.DBConnection.Exec("DELETE FROM Users WHERE id = ?", userID)
+	if err != nil {
+		return err
+	}
+	_, err = config.DBConnection.Exec("DELETE FROM Tokens WHERE userId = ?", userID)
 	return err
 }
 
@@ -147,20 +151,28 @@ func LogOutUser(userID int64) error {
 	return deleteTokenForUser(userID, tokenTypeRefresh)
 }
 
-func userGenerateTokens(user *User) (accessCookie *http.Cookie, refreshCookie *http.Cookie, err error) {
-	accessToken, expires, _ := generateJWT(user)
-	refreshToken, err := getTokenForUser(user.ID, tokenTypeRefresh)
-	if err != nil || refreshToken.Token == "" {
-		// generate both
-		refreshToken, err = generateToken(user, tokenTypeRefresh)
-	}
+func userGenerateTokens(user *User, generateRefreshToken bool) (accessToken *Token, accessExpires string, refreshToken *Token, err error) {
+	accessTokenString, accessExpires, err := generateJWT(user)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	accessCookie, refreshCookie = generateCookies(accessToken, refreshToken.Token)
-	user.Access = accessToken
-	user.Refresh = refreshToken.Token
-	user.Expires = expires
+	accessToken = &Token{}
+	accessToken.CreatedOn = time.Now().Format(timeFormatAPI)
+	accessToken.ExpiresOn = accessExpires
+	accessToken.TokenType = tokenTypeAccess
+	accessToken.UserID = user.ID
+	accessToken.Token = accessTokenString
+
+	if generateRefreshToken {
+		refreshToken, err = generateToken(user, tokenTypeRefresh)
+		if err != nil {
+			return
+		}
+		err = saveTokenForUser(refreshToken)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -187,7 +199,17 @@ func createTestUser(defaults *User) error {
 	if err != nil {
 		return err
 	}
-	_, _, err = userGenerateTokens(defaults)
+	access, expires, refresh, err := userGenerateTokens(defaults, true)
+	if err != nil {
+		return err
+	}
+	err = saveTokenForUser(refresh)
+	if err != nil {
+		return err
+	}
+	defaults.Access = access.Token
+	defaults.Expires = expires
+	defaults.Refresh = refresh.Token
 	return err
 }
 

@@ -127,6 +127,7 @@ func SetupConfig() *apiConfig {
 			}
 		}
 	}
+	config.CacheClient.FlushAll().Result()
 
 	return config
 }
@@ -226,9 +227,10 @@ func SetupAPI() *chi.Mux {
 
 	// users
 	r.Post("/login", routeUserLogin)
+	r.Post("/logout", routeUserLogout)
 	r.Get("/me", routeGetUserProfile)
 	r.Patch("/me", routeUpdateUserProfile)
-	r.Post("/me/refresh", notImplementedRoute)
+	r.Post("/me/refresh", routeUserRefreshAccess)
 
 	// projects
 	r.Post("/projects", routeCreateProject)
@@ -250,17 +252,19 @@ func SetupAPI() *chi.Mux {
 
 	// project / module links
 	r.Get("/projects/{projectID}/flow", routeGetModulesOnProject)
-	r.Put("/projects/{projectID}/modules/{moduleID}/{order}", routeSaveModuleOnProject)
-	r.Delete("/projects/{projectID}/modules/{moduleID}", routeRemoveModuleFromProject)
+	r.Put("/projects/{projectID}/modules/{moduleID}/order/{order}", routeLinkModuleAndProject)
+	r.Delete("/projects/{projectID}/modules/{moduleID}", routeUnlinkModuleAndProject)
 
 	// blocks
-	r.Post("/blocks", notImplementedRoute)
-	r.Get("/blocks", notImplementedRoute)
-	r.Get("/blocks/{blockID}", notImplementedRoute)
-	r.Patch("/blocks/{blockID}", notImplementedRoute)
-	r.Delete("/blocks/{blockID}", notImplementedRoute)
-	r.Put("/modules/{moduleID}/blocks/{blockID}/{order}", notImplementedRoute)
-	r.Delete("/modules/{moduleID}/{blockID}/{order}", notImplementedRoute)
+	r.Get("/blocks", routeGetBlocksOnSite)
+	r.Post("/blocks/{blockType}", routeCreateBlock)
+	r.Get("/blocks/{blockID}", routeGetBlock)
+	r.Patch("/blocks/{blockID}", routeUpdateBlock)
+	r.Delete("/blocks/{blockID}", routeDeleteBlock)
+	r.Get("/modules/{moduleID}/blocks", routeGetBlocksForModule)
+	r.Delete("/modules/{moduleID}/blocks", routeUnlinkAllBlocksFromModule)
+	r.Put("/modules/{moduleID}/blocks/{blockID}/order/{order}", routeLinkBlockAndModule)
+	r.Delete("/modules/{moduleID}/blocks/{blockID}", routeUnlinkBlockAndModule)
 
 	// user / block progress
 	r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
