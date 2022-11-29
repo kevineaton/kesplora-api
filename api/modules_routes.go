@@ -192,8 +192,8 @@ func routeGetModulesOnProject(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, modules)
 }
 
-// routeSaveModuleOnProject links a module and a project in a specific order
-func routeSaveModuleOnProject(w http.ResponseWriter, r *http.Request) {
+// routeLinkModuleAndProject links a module and a project in a specific order
+func routeLinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
 		MustBeAdmin:     true,
 		ShouldSendError: true,
@@ -226,7 +226,7 @@ func routeSaveModuleOnProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = SaveModuleInProject(projectID, moduleID, order)
+	err = LinkModuleAndProject(projectID, moduleID, order)
 	if err != nil {
 		sendAPIError(w, api_error_module_link_err, err, map[string]interface{}{
 			"error": err.Error(),
@@ -239,8 +239,8 @@ func routeSaveModuleOnProject(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeRemoveModuleFromProject removes a module from a project
-func routeRemoveModuleFromProject(w http.ResponseWriter, r *http.Request) {
+// routeUnlinkModuleAndProject removes a module from a project
+func routeUnlinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
 		MustBeAdmin:     true,
 		ShouldSendError: true,
@@ -272,7 +272,7 @@ func routeRemoveModuleFromProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = RemoveModuleFromProject(projectID, moduleID)
+	err = UnlinkModuleAndProject(projectID, moduleID)
 	if err != nil {
 		sendAPIError(w, api_error_module_unlink_err, err, map[string]interface{}{
 			"error": err.Error(),

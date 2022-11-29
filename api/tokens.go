@@ -95,8 +95,9 @@ func generateToken(user *User, tokenType string) (*Token, error) {
 	hasher.Write([]byte(str))
 	hash := hex.EncodeToString(hasher.Sum(nil))
 	tokenString := hash[0:tokenSize]
+
 	if tokenType == tokenTypeRefresh {
-		tokenString = fmt.Sprintf("ker_%s_%s", randomString(12), tokenString)
+		tokenString = fmt.Sprintf("ker_%d^%s_%s", user.ID, randomString(12), tokenString)
 	}
 
 	token := &Token{
@@ -109,7 +110,7 @@ func generateToken(user *User, tokenType string) (*Token, error) {
 
 func generateCookies(accessToken, refreshToken string) (accessCookie, refreshCookie *http.Cookie) {
 	accessCookie = &http.Cookie{
-		Name:     "access_token",
+		Name:     tokenTypeAccess,
 		Value:    accessToken,
 		Expires:  time.Now().Add(time.Minute * tokenExpiresMinutesAccess),
 		MaxAge:   tokenExpiresMinutesAccess * 60 * 10,
@@ -121,12 +122,12 @@ func generateCookies(accessToken, refreshToken string) (accessCookie, refreshCoo
 	}
 
 	refreshCookie = &http.Cookie{
-		Name:     "refresh_token",
+		Name:     tokenTypeRefresh,
 		Value:    refreshToken,
 		Expires:  time.Now().Add(time.Minute * tokenExpiresMinutesRefresh),
 		MaxAge:   tokenExpiresMinutesRefresh * 60,
 		Domain:   config.RootAPIDomain,
-		Path:     "/users/refresh",
+		Path:     "/me/refresh",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,

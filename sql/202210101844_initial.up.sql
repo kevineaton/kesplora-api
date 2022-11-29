@@ -62,8 +62,8 @@ DROP TABLE IF EXISTS `Blocks`;
 CREATE TABLE `Blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
-  `blockType` enum('other','sign_up','survey','presentation') NOT NULL DEFAULT 'other',
-  `blockTypeId` int(11) NOT NULL DEFAULT 0,
+  `summary` varchar(2048) NOT NULL,
+  `blockType` enum('other','survey','presentation', 'text', 'external') NOT NULL DEFAULT 'other',
   PRIMARY KEY (`id`),
   KEY `blockType` (`blockType`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -144,4 +144,49 @@ CREATE TABLE `Tokens` (
   `expiresOn` datetime NOT NULL,
   `token` varchar(128) NOT NULL,
   UNIQUE KEY `userId` (`userId`,`tokenType`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockText`;
+CREATE TABLE `BlockText` (
+  `blockId` int(11) NOT NULL,
+  `text` text NOT NULL,
+  PRIMARY KEY (`blockId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockExternal`;
+CREATE TABLE `BlockExternal` (
+  `blockId` int(11) NOT NULL,
+  `externalLink` varchar(2048) NOT NULL,
+  PRIMARY KEY (`blockId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockPresentation`;
+CREATE TABLE `BlockPresentation` (
+  `blockId` int(11) NOT NULL,
+  `presentationType` enum('youtube','pdf') NOT NULL DEFAULT 'pdf',
+  `embedLink` varchar(2048) NOT NULL,
+  PRIMARY KEY (`blockId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockSurvey`;
+CREATE TABLE `BlockSurvey` (
+  `blockId` int(11) NOT NULL,
+  PRIMARY KEY (`blockId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockSurveyQuestion`;
+CREATE TABLE `BlockSurveyQuestion` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `blockId` int(11) NOT NULL,
+  `questionType` enum('multiple','single','short','long') DEFAULT NULL,
+  `question` varchar(1024) NOT NULL DEFAULT '',
+  `surveyOrder` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockSurveyQuestionOptions`;
+CREATE TABLE `BlockSurveyQuestionOptions` (
+  `questionId` int(11) NOT NULL,
+  `optionText` varchar(1024) NOT NULL DEFAULT '',
+  `optionOrder` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

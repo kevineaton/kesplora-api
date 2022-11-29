@@ -1,6 +1,10 @@
 package api
 
-import "net/http"
+import (
+	"fmt"
+	"math/rand"
+	"net/http"
+)
 
 const (
 	ModuleStatusActive   = "active"
@@ -98,8 +102,8 @@ func GetAllModulesForSite() ([]Module, error) {
 	return mods, nil
 }
 
-// SaveModuleInProject saves a connection between a module and a project
-func SaveModuleInProject(projectID, moduleID, order int64) error {
+// LinkModuleAndProject saves a connection between a module and a project
+func LinkModuleAndProject(projectID, moduleID, order int64) error {
 	_, err := config.DBConnection.Exec(`INSERT INTO Flows
 	(projectId, moduleId, flowOrder)
 	VALUES 
@@ -107,10 +111,34 @@ func SaveModuleInProject(projectID, moduleID, order int64) error {
 	return err
 }
 
-// RemoveModuleFromProject removes the module from a project
-func RemoveModuleFromProject(projectID, moduleID int64) error {
+// UnlinkModuleAndProject removes the module from a project
+func UnlinkModuleAndProject(projectID, moduleID int64) error {
 	_, err := config.DBConnection.Exec(`DELETE FROM Flows WHERE projectId = ? AND moduleId = ?`, projectID, moduleID)
 	return err
+}
+
+// createTestModule is a helper to create a test module
+func createTestModule(defaults *Module, projectID int64, moduleOrder int64) error {
+	if defaults.Name == "" {
+		defaults.Name = fmt.Sprintf("Test Module %d", rand.Intn(9999999))
+	}
+	if defaults.Description == "" {
+		defaults.Description = "# Test Site\n\n *Do Not Use!*\n"
+	}
+	if defaults.Status == "" {
+		defaults.Status = ModuleStatusActive
+	}
+	err := CreateModule(defaults)
+	if err != nil {
+		return err
+	}
+	if projectID != 0 {
+		err = LinkModuleAndProject(projectID, defaults.ID, moduleOrder)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (input *Module) processForDB() {

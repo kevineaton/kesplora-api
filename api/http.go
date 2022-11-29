@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -73,7 +74,7 @@ func sendAPIError(w http.ResponseWriter, key string, systemError error, data int
 	w.Write(response)
 
 	// log it
-	Log(LogLevelError, "http_error", key, &LogOptions{
+	Log(LogLevelError, "http_error", fmt.Sprintf("%s := %v", key, systemError.Error()), &LogOptions{
 		ExtraData: map[string]interface{}{
 			"data":  data,
 			"error": systemError.Error(),

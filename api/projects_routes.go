@@ -122,7 +122,7 @@ func routeUpdateProject(w http.ResponseWriter, r *http.Request) {
 		sendAPIError(w, api_error_project_save_error, err, map[string]string{})
 		return
 	}
-	sendAPIJSONData(w, http.StatusOK, input)
+	sendAPIJSONData(w, http.StatusOK, found)
 }
 
 // routeGetProject gets a project for the site by id

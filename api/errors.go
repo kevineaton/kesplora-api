@@ -28,6 +28,8 @@ const (
 	// auth
 	api_error_auth_missing          = "api_error_auth_missing"
 	api_error_auth_expired          = "api_error_auth_expired"
+	api_error_auth_save_err         = "api_error_auth_expired_save_err"
+	api_error_auth_malformed        = "api_error_auth_malformed"
 	api_error_auth_must_admin       = "api_error_auth_must_admin"
 	api_error_auth_must_participant = "api_error_auth_must_participant"
 	api_error_auth_must_user        = "api_error_auth_must_user"
@@ -47,6 +49,7 @@ const (
 	api_error_user_cannot_save = "api_error_cannot_save"
 	api_error_user_bad_data    = "api_error_user_bad_data"
 	api_error_user_bad_login   = "api_error_user_bad_login"
+	api_error_user_bad_logout  = "api_error_user_bad_logout"
 
 	// project errors
 	api_error_project_missing_data       = "api_error_project_missing_data"
@@ -64,6 +67,17 @@ const (
 	api_error_module_link_err     = "api_error_module_link_err"
 	api_error_module_unlink_err   = "api_error_module_unlink_err"
 	api_error_module_delete_err   = "api_error_module_delete_err"
+
+	// blocks
+	api_error_block_missing_data         = "api_error_block_missing_data"
+	api_error_block_content_missing_data = "api_error_block_content_missing_data"
+	api_error_block_save_error           = "api_error_block_save_error"
+	api_error_block_invalid_type         = "api_error_block_invalid_type"
+	api_error_block_not_found            = "api_error_block_not_found"
+	api_error_block_content_not_found    = "api_error_block_content_not_found"
+	api_error_block_link_err             = "api_error_block_link_err"
+	api_error_block_unlink_err           = "api_error_block_unlink_err"
+	api_error_block_delete_err           = "api_error_block_delete_err"
 )
 
 // apiErrors is a mapping of keys to data
@@ -86,6 +100,14 @@ var apiErrors = map[string]apiError{
 	api_error_auth_expired: {
 		Code:    419,
 		Message: "authorization expired",
+	},
+	api_error_auth_malformed: {
+		Code:    http.StatusUnauthorized,
+		Message: "authorization malformed",
+	},
+	api_error_auth_save_err: {
+		Code:    http.StatusUnauthorized,
+		Message: "authorization could not be saved",
 	},
 	api_error_auth_must_admin: {
 		Code:    http.StatusForbidden,
@@ -145,6 +167,10 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusForbidden,
 		Message: "user login failed",
 	},
+	api_error_user_bad_logout: {
+		Code:    http.StatusBadRequest,
+		Message: "user logout failed",
+	},
 
 	// projects
 	api_error_project_missing_data: {
@@ -200,5 +226,43 @@ var apiErrors = map[string]apiError{
 	api_error_module_delete_err: {
 		Code:    http.StatusBadRequest,
 		Message: "could not delete the module",
+	},
+
+	// blocks
+	api_error_block_missing_data: {
+		Code:    http.StatusBadRequest,
+		Message: "missing data",
+	},
+	api_error_block_content_missing_data: {
+		Code:    http.StatusBadRequest,
+		Message: "missing content data",
+	},
+	api_error_block_save_error: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save",
+	},
+	api_error_block_invalid_type: {
+		Code:    http.StatusBadRequest,
+		Message: "that is not a valid block type",
+	},
+	api_error_block_not_found: {
+		Code:    http.StatusNotFound,
+		Message: "block not found",
+	},
+	api_error_block_content_not_found: {
+		Code:    http.StatusNotFound,
+		Message: "block content not found",
+	},
+	api_error_block_link_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not link that module and block",
+	},
+	api_error_block_unlink_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not unlink that module and block",
+	},
+	api_error_block_delete_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not delete the block",
 	},
 }

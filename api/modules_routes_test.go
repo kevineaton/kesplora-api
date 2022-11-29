@@ -120,10 +120,10 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.True(found2)
 
 	// put them on the project in the flow
-	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/1", project.ID, module1.ID), b, routeSaveModuleOnProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/order/1", project.ID, module1.ID), b, routeLinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
-	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/2", project.ID, module2.ID), b, routeSaveModuleOnProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/order/2", project.ID, module2.ID), b, routeLinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
@@ -207,7 +207,7 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.Equal(update.Description, updated1.Description)
 
 	// change the order
-	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/9", project.ID, module1.ID), b, routeSaveModuleOnProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/order/9", project.ID, module1.ID), b, routeLinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
@@ -274,7 +274,7 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.True(found2)
 
 	// remove module 2 and make sure it exists but is gone from the flow
-	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/projects/%d/modules/%d", project.ID, module2.ID), b, routeRemoveModuleFromProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/projects/%d/modules/%d", project.ID, module2.ID), b, routeUnlinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/modules/%d", module2.ID), b, routeGetModuleByID, admin.Access)
