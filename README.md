@@ -76,8 +76,13 @@ Structs should have both `json` and `db` tags. At the bottom of every struct, th
 We are still very early in development. If a struct or file has minimal code, it has not been fully thought out and is a place holder. Aside from functionality, there's a few non-functionality improvements:
 
 [ ] Integrate an email system that can use Mailgun at the least (but in a way that supports others?)
+
 [ ] Integrate AWS S3 backend for file uploads
+
 [ ] Add Redis and cache the site status on calls
+
 [ ] Add Open API Specification 3 files to document the API
+
 [ ] Add CI
+
 [ ] Add hcaptcha for signups and setups
