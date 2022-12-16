@@ -42,7 +42,7 @@ type Project struct {
 	ParticipantVisibility           string `json:"participantVisibility" db:"participantVisibility"`
 	ParticipantMinimumAge           int64  `json:"participantMinimumAge" db:"participantMinimumAge"`
 	ConnectParticipantToConsentForm string `json:"connectParticipantToConsentForm" db:"connectParticipantToConsentForm"`
-	ParticipantCount                int64  `json:"participantCoun" db:"participantCount"`
+	ParticipantCount                int64  `json:"participantCount" db:"participantCount"`
 }
 
 // ProjectAPIReturnNonAdmin is a much-reduced project return struct for non-admins
@@ -153,6 +153,34 @@ func LinkUserAndProject(userID, projectID int64) error {
 func UnlinkUserAndProject(userID, projectID int64) error {
 	_, err := config.DBConnection.Exec("DELETE FROM ProjectUserLinks WHERE userId = ? AND projectId = ?", userID, projectID)
 	return err
+}
+
+func RemoveUserFromProjectCompletely(userID, projectID int64) error {
+	// this will be the entry point for removing a participant from a research study and
+	// MUST be updated as new user-connected entries are made; this should never be called
+	// on admin users and instead the admin user's account should have the status changed;
+	// similarly, it may be better to make the participant's account inactive instead of removing
+	// their contributions, unless it's absolutely necessary to remove the participant's data
+	// this will also allow a user to re-join (as in, there's no current logic to prevent re-joining)
+	// but they will start over
+
+	// delete the consent form
+	err := DeleteConsentesponseForParticipant(userID, projectID)
+	if err != nil {
+		return err
+	}
+
+	// remove the project link
+	err = UnlinkUserAndProject(userID, projectID)
+	if err != nil {
+		return err
+	}
+
+	// TODO: remove the block status for the user
+
+	// TODO: remove any survey responses for the user
+
+	return nil
 }
 
 // createTestProject is used for tests to create a test project

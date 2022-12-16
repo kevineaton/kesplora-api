@@ -55,3 +55,49 @@ func parseTimeToTimeFormat(input, format string) (string, error) {
 	}
 	return t.Format(format), nil
 }
+
+// CalculateDuration gets the duration from a certain date time to now.
+// Timezone is not important for this one and we always calculate from now.
+// Shamelessly adapted from icza at https://stackoverflow.com/questions/36530251/golang-time-since-with-months-and-years. Support
+// him through his profile: https://stackoverflow.com/users/1705598/icza
+func CalculateDuration(input time.Time) (year, month, day, hour, min, sec int) {
+	now := time.Now()
+	y1, M1, d1 := input.Date()
+	y2, M2, d2 := now.Date()
+
+	h1, m1, s1 := input.Clock()
+	h2, m2, s2 := now.Clock()
+
+	year = int(y2 - y1)
+	month = int(M2 - M1)
+	day = int(d2 - d1)
+	hour = int(h2 - h1)
+	min = int(m2 - m1)
+	sec = int(s2 - s1)
+
+	// Normalize negative values
+	if sec < 0 {
+		sec += 60
+		min--
+	}
+	if min < 0 {
+		min += 60
+		hour--
+	}
+	if hour < 0 {
+		hour += 24
+		day--
+	}
+	if day < 0 {
+		// days in month:
+		t := time.Date(y1, M1, 32, 0, 0, 0, 0, time.UTC)
+		day += 32 - t.Day()
+		month--
+	}
+	if month < 0 {
+		month += 12
+		year--
+	}
+
+	return
+}

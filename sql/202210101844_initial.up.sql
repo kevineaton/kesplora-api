@@ -110,19 +110,17 @@ CREATE TABLE `Users` (
 
 DROP TABLE IF EXISTS `ConsentForms`;
 CREATE TABLE `ConsentForms` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
   `projectId` int(11) NOT NULL,
   `contentInMarkdown` text NOT NULL,
   `contactInformationDisplay` varchar(512) NOT NULL DEFAULT '',
   `institutionInformationDisplay` varchar(512) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`),
-  KEY `projectId` (`projectId`)
+  PRIMARY KEY (`projectId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `ConsentResponses`;
 CREATE TABLE `ConsentResponses` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `consentFormId` int(11) NOT NULL,
+  `projectId` int(11) NOT NULL,
   `dateConsented` datetime NOT NULL,
   `consentStatus` enum('accepted','accepted_for_other','declined') DEFAULT NULL,
   `participantComments` text NOT NULL,
@@ -132,7 +130,7 @@ CREATE TABLE `ConsentResponses` (
   `participantProvidedContactInformation` varchar(64) NOT NULL,
   `participantId` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `consentFormId` (`consentFormId`),
+  KEY `projectId` (`projectId`),
   KEY `participantId` (`participantId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

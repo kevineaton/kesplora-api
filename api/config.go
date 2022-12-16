@@ -238,9 +238,18 @@ func SetupAPI() *chi.Mux {
 	r.Get("/projects/{projectID}", routeGetProject)
 	r.Patch("/projects/{projectID}", routeUpdateProject)
 
+	// project consent forms
+	r.Post("/projects/{projectID}/consent", routeSaveConsentForm)
+	r.Get("/projects/{projectID}/consent", routeGetConsentForm)
+	r.Delete("/projects/{projectID}/consent", routeDeleteConsentForm)
+	r.Post("/projects/{projectID}/consent/responses", routeCreateConsentResponse)
+	r.Get("/projects/{projectID}/consent/responses", routeGetConsentResponses)
+	r.Get("/projects/{projectID}/consent/responses/{responseID}", routeGetConsentResponse)
+	r.Delete("/projects/{projectID}/consent/responses/{responseID}", routeDeleteConsentResponse)
+
 	// project / users
 	r.Get("/projects/{projectID}/users", notImplementedRoute)
-	r.Post("/projects/{projectID}/users/{userID}", routeLinkUserAndProject)
+	r.Post("/projects/{projectID}/users/{userID}", routeLinkUserAndProject) // used for overriding, but should be careful due to consent flows
 	r.Delete("/projects/{projectID}/users/{userID}", routeUnlinkUserAndProject)
 
 	// modules, which includes flows
@@ -252,6 +261,7 @@ func SetupAPI() *chi.Mux {
 
 	// project / module links
 	r.Get("/projects/{projectID}/flow", routeGetModulesOnProject)
+	r.Delete("/projects/{projectID}/flow", routeUnlinkAllModulesFromProject)
 	r.Put("/projects/{projectID}/modules/{moduleID}/order/{order}", routeLinkModuleAndProject)
 	r.Delete("/projects/{projectID}/modules/{moduleID}", routeUnlinkModuleAndProject)
 

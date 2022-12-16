@@ -14,11 +14,12 @@ const (
 
 // Module is a module that contains Blocks and are organized into Flows for a Project
 type Module struct {
-	ID          int64  `json:"id" db:"id"`
-	Name        string `json:"name" db:"name"`
-	Status      string `json:"status" db:"status"`
-	Description string `json:"description" db:"description"`
-	FlowOrder   int64  `json:"flowOrder" db:"flowOrder"` // used in getting for a project
+	ID            int64  `json:"id" db:"id"`
+	Name          string `json:"name" db:"name"`
+	Status        string `json:"status" db:"status"`
+	Description   string `json:"description" db:"description"`
+	FlowOrder     int64  `json:"flowOrder" db:"flowOrder"`         // used in getting for a project
+	ProjectsCount int64  `json:"projectsCount" db:"projectsCount"` // used in getting for platform to identify if it's in a project
 }
 
 // CreateModule creates a module as a standalone "box"
@@ -70,14 +71,16 @@ func DeleteModule(moduleID int64) error {
 func GetModuleByID(moduleID int64) (*Module, error) {
 	mod := &Module{}
 	defer mod.processForAPI()
-	err := config.DBConnection.Get(mod, `SELECT * FROM Modules WHERE id = ?`, moduleID)
+	err := config.DBConnection.Get(mod, `SELECT m.*, IFNULL((SELECT COUNT(*) FROM Flows f WHERE f.moduleId = m.id GROUP BY f.projectId), 0) AS projectsCount
+	FROM Modules m WHERE m.id = ?`, moduleID)
 	return mod, err
 }
 
 // GetModulesForProject gets all of the modules for a project
 func GetModulesForProject(projectID int64) ([]Module, error) {
 	mods := []Module{}
-	err := config.DBConnection.Select(&mods, `SELECT m.*, o.flowOrder FROM Modules m, Flows o 
+	err := config.DBConnection.Select(&mods, `SELECT m.*, o.flowOrder , IFNULL((SELECT COUNT(*) FROM Flows f WHERE f.moduleId = m.id GROUP BY f.projectId), 0) AS projectsCount
+		FROM Modules m, Flows o 
 		WHERE o.projectId = ? AND  o.moduleId = m.id ORDER BY o.flowOrder`, projectID)
 	if err != nil {
 		return mods, err
@@ -91,7 +94,8 @@ func GetModulesForProject(projectID int64) ([]Module, error) {
 // GetAllModulesForSite gets all the modules on the site, needed for the building of the flows interface
 func GetAllModulesForSite() ([]Module, error) {
 	mods := []Module{}
-	err := config.DBConnection.Select(&mods, `SELECT m.* FROM Modules m 
+	err := config.DBConnection.Select(&mods, `SELECT m.*, IFNULL((SELECT COUNT(*) FROM Flows f WHERE f.moduleId = m.id GROUP BY f.projectId), 0) AS projectsCount
+	FROM Modules m 
 		ORDER BY m.name`)
 	if err != nil {
 		return mods, err
@@ -114,6 +118,12 @@ func LinkModuleAndProject(projectID, moduleID, order int64) error {
 // UnlinkModuleAndProject removes the module from a project
 func UnlinkModuleAndProject(projectID, moduleID int64) error {
 	_, err := config.DBConnection.Exec(`DELETE FROM Flows WHERE projectId = ? AND moduleId = ?`, projectID, moduleID)
+	return err
+}
+
+// UnlinkAllModulesFromProject removes all modules from a project
+func UnlinkAllModulesFromProject(projectID int64) error {
+	_, err := config.DBConnection.Exec(`DELETE FROM Flows WHERE projectId = ?`, projectID)
 	return err
 }
 
