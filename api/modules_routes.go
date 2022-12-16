@@ -284,3 +284,39 @@ func routeUnlinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 		"linked": false,
 	})
 }
+
+// routeUnlinkAllModulesFromProject removes all modules from a project
+func routeUnlinkAllModulesFromProject(w http.ResponseWriter, r *http.Request) {
+	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
+		MustBeAdmin:     true,
+		ShouldSendError: true,
+	})
+	if !results.IsValid {
+		return
+	}
+	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
+	if projectIDErr != nil {
+		sendAPIError(w, api_error_invalid_path, errors.New("invalid path"), map[string]string{})
+		return
+	}
+
+	_, err := GetProjectByID(projectID)
+	if err != nil {
+		sendAPIError(w, api_error_project_not_found, err, map[string]interface{}{
+			"projectID": projectID,
+		})
+		return
+	}
+
+	err = UnlinkAllModulesFromProject(projectID)
+	if err != nil {
+		sendAPIError(w, api_error_module_unlink_err, err, map[string]interface{}{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	sendAPIJSONData(w, http.StatusOK, map[string]bool{
+		"linked": false,
+	})
+}

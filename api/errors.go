@@ -60,6 +60,19 @@ const (
 	api_error_project_unlink_err         = "api_error_project_unlink_err"
 	api_error_project_signup_unavailable = "api_error_project_signup_unavailable"
 
+	// consent form errors
+	api_error_consent_save_err                     = "api_error_consent_save_err"
+	api_error_consent_save_participants_not_zero   = "api_error_consent_save_participants_not_zero"
+	api_error_consent_not_found                    = "api_error_consent_not_found"
+	api_error_consent_delete_participants_not_zero = "api_error_consent_delete_participants_not_zero"
+	api_error_consent_delete_err                   = "api_error_consent_delete_err"
+	api_error_consent_response_project_closed      = "api_error_consent_response_project_closed"
+	api_error_consent_response_code_err            = "api_error_consent_response_code_err"
+	api_error_consent_response_max_reached         = "api_error_consent_response_max_reached"
+	api_error_consent_response_not_min_age         = "api_error_consent_response_not_min_age"
+	api_error_consent_response_save_err            = "api_error_consent_response_save_err"
+	api_error_consent_response_get_err             = "api_error_consent_response_get_err"
+
 	// module errors
 	api_error_module_missing_data = "api_error_module_missing_data"
 	api_error_module_save_error   = "api_error_module_save_error"
@@ -200,6 +213,52 @@ var apiErrors = map[string]apiError{
 	api_error_project_signup_unavailable: {
 		Code:    http.StatusBadRequest,
 		Message: "sign up unavailable",
+	},
+
+	// consent and responses
+	api_error_consent_save_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save",
+	},
+	api_error_consent_save_participants_not_zero: {
+		Code:    http.StatusForbidden,
+		Message: "project already underway",
+	},
+	api_error_consent_not_found: {
+		Code:    http.StatusBadRequest,
+		Message: "could not find",
+	},
+	api_error_consent_delete_participants_not_zero: {
+		Code:    http.StatusForbidden,
+		Message: "project already underway",
+	},
+	api_error_consent_delete_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not delete",
+	},
+	api_error_consent_response_project_closed: {
+		Code:    http.StatusForbidden,
+		Message: "project is closed",
+	},
+	api_error_consent_response_code_err: {
+		Code:    http.StatusForbidden,
+		Message: "code does not match",
+	},
+	api_error_consent_response_max_reached: {
+		Code:    http.StatusForbidden,
+		Message: "max participants reached",
+	},
+	api_error_consent_response_not_min_age: {
+		Code:    http.StatusForbidden,
+		Message: "minimum age not met",
+	},
+	api_error_consent_response_save_err: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save",
+	},
+	api_error_consent_response_get_err: {
+		Code:    http.StatusForbidden,
+		Message: "could not find",
 	},
 
 	// modules
