@@ -10,16 +10,8 @@ import (
 	"github.com/go-chi/render"
 )
 
-// routeCreateBlock creates a new block id and then processes the content for saving
-func routeCreateBlock(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
-
+// routeAdminCreateBlock creates a new block id and then processes the content for saving
+func routeAdminCreateBlock(w http.ResponseWriter, r *http.Request) {
 	blockType := chi.URLParam(r, "blockType")
 	if !isValidBlockType(blockType) {
 		sendAPIError(w, api_error_block_invalid_type, errors.New("invalid type"), map[string]string{
@@ -49,7 +41,6 @@ func routeCreateBlock(w http.ResponseWriter, r *http.Request) {
 
 	err = CreateBlock(input)
 	if err != nil {
-		fmt.Println(err.Error())
 		sendAPIError(w, api_error_block_save_error, err, map[string]interface{}{
 			"input": input,
 		})
@@ -59,7 +50,6 @@ func routeCreateBlock(w http.ResponseWriter, r *http.Request) {
 	// now, hand off the save depending on the body of the content
 	data, err := handleBlockSave(blockType, input.ID, input.Content)
 	if err != nil {
-		fmt.Println(err.Error())
 		sendAPIError(w, api_error_block_save_error, err, map[string]interface{}{
 			"input": input,
 		})
@@ -69,16 +59,8 @@ func routeCreateBlock(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusCreated, input)
 }
 
-// routeGetBlocksOnSite gets the meta data about all modules on the platform
-func routeGetBlocksOnSite(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
-
+// routeAdminGetBlocksOnSite gets the meta data about all modules on the platform
+func routeAdminGetBlocksOnSite(w http.ResponseWriter, r *http.Request) {
 	blocks, err := GetBlocksForSite()
 	if err != nil {
 		sendAPIError(w, api_error_block_not_found, err, map[string]interface{}{})
@@ -87,15 +69,8 @@ func routeGetBlocksOnSite(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, blocks)
 }
 
-// routeGetBlocksForModule gets the blocks on a module
-func routeGetBlocksForModule(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminGetBlocksForModule gets the blocks on a module
+func routeAdminGetBlocksForModule(w http.ResponseWriter, r *http.Request) {
 	moduleID, moduleIDErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	if moduleIDErr != nil {
 		sendAPIError(w, api_error_invalid_path, moduleIDErr, map[string]string{})
@@ -116,15 +91,8 @@ func routeGetBlocksForModule(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, blocks)
 }
 
-// routeUnlinkAllBlocksFromModule unlinks all blocks from a module
-func routeUnlinkAllBlocksFromModule(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminUnlinkAllBlocksFromModule unlinks all blocks from a module
+func routeAdminUnlinkAllBlocksFromModule(w http.ResponseWriter, r *http.Request) {
 	moduleID, moduleIDErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	if moduleIDErr != nil {
 		sendAPIError(w, api_error_invalid_path, moduleIDErr, map[string]string{})
@@ -147,15 +115,8 @@ func routeUnlinkAllBlocksFromModule(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeGetBlock gets the block and content
-func routeGetBlock(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminGetBlock gets the block and content
+func routeAdminGetBlock(w http.ResponseWriter, r *http.Request) {
 
 	blockID, blockIDErr := strconv.ParseInt(chi.URLParam(r, "blockID"), 10, 64)
 	if blockIDErr != nil {
@@ -177,15 +138,8 @@ func routeGetBlock(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, block)
 }
 
-// routeUpdateBlock updates a block and its content
-func routeUpdateBlock(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminUpdateBlock updates a block and its content
+func routeAdminUpdateBlock(w http.ResponseWriter, r *http.Request) {
 	blockID, blockIDErr := strconv.ParseInt(chi.URLParam(r, "blockID"), 10, 64)
 	if blockIDErr != nil {
 		sendAPIError(w, api_error_invalid_path, blockIDErr, map[string]string{})
@@ -227,15 +181,8 @@ func routeUpdateBlock(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, block)
 }
 
-// routeDeleteBlock deletes a block and associated content
-func routeDeleteBlock(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminDeleteBlock deletes a block and associated content
+func routeAdminDeleteBlock(w http.ResponseWriter, r *http.Request) {
 	blockID, blockIDErr := strconv.ParseInt(chi.URLParam(r, "blockID"), 10, 64)
 	if blockIDErr != nil {
 		sendAPIError(w, api_error_invalid_path, blockIDErr, map[string]string{})
@@ -265,15 +212,8 @@ func routeDeleteBlock(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeLinkBlockAndModule links a module and a block
-func routeLinkBlockAndModule(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminLinkBlockAndModule links a module and a block
+func routeAdminLinkBlockAndModule(w http.ResponseWriter, r *http.Request) {
 	moduleID, moduleIDErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	blockID, blockIDErr := strconv.ParseInt(chi.URLParam(r, "blockID"), 10, 64)
 	order, orderErr := strconv.ParseInt(chi.URLParam(r, "order"), 10, 64)
@@ -308,15 +248,8 @@ func routeLinkBlockAndModule(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeUnlinkBlockAndModule unlinks a module and a block
-func routeUnlinkBlockAndModule(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminUnlinkBlockAndModule unlinks a module and a block
+func routeAdminUnlinkBlockAndModule(w http.ResponseWriter, r *http.Request) {
 	moduleID, moduleIDErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	blockID, blockIDErr := strconv.ParseInt(chi.URLParam(r, "blockID"), 10, 64)
 	if blockIDErr != nil || moduleIDErr != nil {

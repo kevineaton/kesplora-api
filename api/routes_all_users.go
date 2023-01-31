@@ -20,8 +20,8 @@ type refreshTokenInput struct {
 	Refresh string `json:"refresh"`
 }
 
-// routeUserLogin attempts to login a user
-func routeUserLogin(w http.ResponseWriter, r *http.Request) {
+// routeAllUserLogin attempts to login a user
+func routeAllUserLogin(w http.ResponseWriter, r *http.Request) {
 	input := loginInput{}
 	render.Bind(r, &input)
 	if input.Login == "" || input.Password == "" {
@@ -56,8 +56,8 @@ func routeUserLogin(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, user)
 }
 
-// routeGetUserProfile gets a user's profile based upon their JWT
-func routeGetUserProfile(w http.ResponseWriter, r *http.Request) {
+// routeAllGetUserProfile gets a user's profile based upon their JWT
+func routeAllGetUserProfile(w http.ResponseWriter, r *http.Request) {
 	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
 		ShouldSendError: true,
 	})
@@ -73,8 +73,8 @@ func routeGetUserProfile(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, user)
 }
 
-// routeUpdateUserProfile updates a profile based upon their JWT
-func routeUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+// routeAllUpdateUserProfile updates a profile based upon their JWT
+func routeAllUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
 		ShouldSendError: true,
 	})
@@ -115,8 +115,8 @@ func routeUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, user)
 }
 
-// routeUserRefreshAccess is a bit of a bear, but handles refreshing the access token for the user
-func routeUserRefreshAccess(w http.ResponseWriter, r *http.Request) {
+// routeAllUserRefreshAccess is a bit of a bear, but handles refreshing the access token for the user
+func routeAllUserRefreshAccess(w http.ResponseWriter, r *http.Request) {
 	refreshToken := ""
 	refreshCookie, err := r.Cookie(tokenTypeRefresh)
 	if err == nil && refreshCookie != nil {
@@ -208,8 +208,8 @@ func routeUserRefreshAccess(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, foundUser)
 }
 
-// routeUserLogout logs out a user
-func routeUserLogout(w http.ResponseWriter, r *http.Request) {
+// routeAllUserLogout logs out a user
+func routeAllUserLogout(w http.ResponseWriter, r *http.Request) {
 	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
 		ShouldSendError: true,
 	})

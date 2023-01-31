@@ -8,6 +8,19 @@ This project sprung out of a doctoral research project that had unique needs. Th
 
 Very early stages. Structs, funcs, flows, and APIs will all change. Do not use this at this time! If you would like to assist, definitely reach out.
 
+## Configuration
+
+Most configuration is handled through the `Config.go` file reading from the environment. Of note, the following values deserve explanation:
+
+- `KESPLORA_ENVIRONMENT` (`test`): One of `test`, `dev`, or `production`. Currently has no impact on the business logic.
+- `KESPLORA_API_API_PORT` (`8080`): The port for the HTTP server to listen on. This is usually served behind proxy, such as nginx, that handles SSL termination
+- `KESPLORA_DOMAIN` (`localhost`): The domain the HTTP server listens on. Used for things like HTTP Cookie scoping
+- `KESPLORA_JWT_SIGNING` (`will be randomly generated`): The signing key to use for JWT encryption. Will be randomly generated if not provided. This should be consistent across similar deployments.
+- `KESPLORA_API_LEVEL` (`all`): One of `all`, `admin`, or `participant`. Which API routes to serve. Useful if you want to restrict the admin routes behind different VPC or firewalls.
+- `KESPLORA_API_DB_CONNECTION` (`root:password@tcp(localhost:3306)/Kesplora`): The DB connection string. Currently only MySQL is supported.
+- `KESPLORA_API_CACHE_ADDRESS` (`localhost:6379`): The connection string for the Redis server.
+- `KESPLORA_API_CACHE_PASSWORD` (``): The password for the Redis connection.
+
 ## Set Up
 
 The current architecture is "one DB, one site". Although the `Sites` table has an ID, the current expectation is a single ID for a single site. This site is checked on startup to determine if the site should be set up or not. If the site's `status` field is `pending`, the configuration will output a code that needs to be sent up when configuring the site in order to make it `active`.

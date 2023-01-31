@@ -47,12 +47,14 @@ type Project struct {
 
 // ProjectAPIReturnNonAdmin is a much-reduced project return struct for non-admins
 type ProjectAPIReturnNonAdmin struct {
-	ID               int64  `json:"id" db:"id"`
-	Name             string `json:"name" db:"name"`
-	ShortDescription string `json:"shortDescription" db:"shortDescription"`
-	Description      string `json:"description" db:"description"`
-	Status           string `json:"status" db:"status"`
-	SignupStatus     string `json:"signupStatus" db:"signupStatus"`
+	ID                    int64  `json:"id" db:"id"`
+	Name                  string `json:"name" db:"name"`
+	ShortDescription      string `json:"shortDescription" db:"shortDescription"`
+	Description           string `json:"description" db:"description"`
+	Status                string `json:"status" db:"status"`
+	SignupStatus          string `json:"signupStatus" db:"signupStatus"`
+	ParticipantMinimumAge int64  `json:"participantMinimumAge" db:"participantMinimumAge"`
+	ParticipantVisibility string `json:"participantVisibility" db:"participantVisibility"`
 }
 
 // ProjectUserLinkRequest holds extra request options for joining a project, such as if a code is needed
@@ -105,6 +107,7 @@ func UpdateProject(input *Project) error {
 
 // GetProjectByID gets a single project by its id
 func GetProjectByID(projectID int64) (*Project, error) {
+	// TODO: cache, don't forget the updates to clear the cache
 	project := &Project{}
 	defer project.processForAPI()
 	err := config.DBConnection.Get(project, `SELECT p.*, (SELECT COUNT(*) FROM ProjectUserLinks l WHERE l.projectId = p.id) AS participantCount
@@ -130,6 +133,26 @@ func GetProjectsForSite(siteID int64, status string) ([]Project, error) {
 		projects[i].processForAPI()
 	}
 	return projects, err
+}
+
+// GetProjectsForParticipant gets the lis of projects for a participant
+func GetProjectsForParticipant(participantID int64) ([]Project, error) {
+	projects := []Project{}
+	err := config.DBConnection.Select(&projects, `SELECT p.* FROM Projects p, ProjectUserLinks l 
+	WHERE l.userId = ? AND l.projectId = p.id ORDER BY status, name`, participantID)
+	for i := range projects {
+		projects[i].processForAPI()
+	}
+	return projects, err
+}
+
+// IsUserInProject is a helper to determine if a user is in a project or not
+func IsUserInProject(participantID, projectID int64) bool {
+	// TODO: cache this
+	projects := []Project{}
+	err := config.DBConnection.Select(&projects, `SELECT p.id FROM Projects p, ProjectUserLinks l 
+	WHERE l.userId = ? AND l.projectId = p.id ORDER BY status, name`, participantID)
+	return err == nil && len(projects) > 0
 }
 
 // DeleteProject deletes a project. Note that this probably
@@ -202,12 +225,14 @@ func createTestProject(defaults *Project) error {
 
 func convertProjectToUserRet(input *Project) *ProjectAPIReturnNonAdmin {
 	ret := &ProjectAPIReturnNonAdmin{
-		ID:               input.ID,
-		Name:             input.Name,
-		ShortDescription: input.ShortDescription,
-		Description:      input.Description,
-		Status:           input.Status,
-		SignupStatus:     input.SignupStatus,
+		ID:                    input.ID,
+		Name:                  input.Name,
+		ShortDescription:      input.ShortDescription,
+		Description:           input.Description,
+		Status:                input.Status,
+		SignupStatus:          input.SignupStatus,
+		ParticipantMinimumAge: input.ParticipantMinimumAge,
+		ParticipantVisibility: input.ParticipantVisibility,
 	}
 	// if signup is allowed BUT max participants is reached, signup is blocked
 	if input.MaxParticipants > 0 && input.ParticipantCount >= input.MaxParticipants {

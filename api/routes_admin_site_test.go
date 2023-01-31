@@ -25,14 +25,20 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 		t.Skip("Site already set up or exists, so skipping config tests")
 	}
 
-	code, _, err := testEndpoint(http.MethodGet, "/setup", b, routeGetSiteConfiguration, "")
+	nonAdmin := &User{
+		SystemRole: UserSystemRoleUser,
+	}
+	err = createTestUser(nonAdmin)
+	require.Nil(t, err)
+
+	code, _, err := testEndpoint(http.MethodGet, "/setup", b, routeAllGetSiteConfiguration, "")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, code)
 
 	// send in bad data
 	input := &siteConfigurationInput{}
 	encoder.Encode(input)
-	code, _, err = testEndpoint(http.MethodPost, "/setup", b, routeConfigureSite, "")
+	code, _, err = testEndpoint(http.MethodPost, "/setup", b, routeAllConfigureSite, "")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusBadRequest, code)
 
@@ -50,7 +56,7 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 	input.AdminUser.Password = "this IS @ simple P@ssw0rd!!"
 
 	encoder.Encode(input)
-	code, _, err = testEndpoint(http.MethodPost, "/setup", b, routeConfigureSite, "")
+	code, _, err = testEndpoint(http.MethodPost, "/setup", b, routeAllConfigureSite, "")
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusBadRequest, code)
 
@@ -62,7 +68,7 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 	}
 	input.Code = config.SiteCode
 	encoder.Encode(input)
-	code, res, err := testEndpoint(http.MethodPost, "/setup", b, routeConfigureSite, "")
+	code, res, err := testEndpoint(http.MethodPost, "/setup", b, routeAllConfigureSite, "")
 	assert.Nil(t, err)
 	require.Equal(t, http.StatusOK, code, res)
 
@@ -78,12 +84,12 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 	// login to get the token
 	b.Reset()
 	encoder.Encode(map[string]string{
-		"email":    input.AdminUser.Email,
+		"login":    input.AdminUser.Email,
 		"password": input.AdminUser.Password,
 	})
-	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeUserLogin, "")
+	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeAllUserLogin, "")
 	assert.Nil(t, err)
-	assert.Equal(t, http.StatusOK, code, res)
+	require.Equal(t, http.StatusOK, code, res)
 	m, err := testEndpointResultToMap(res)
 	assert.Nil(t, err)
 	user := &User{}
@@ -93,12 +99,43 @@ func TestSetupAndConfigRoutes(t *testing.T) {
 	assert.Equal(t, input.AdminUser.FirstName, user.FirstName)
 	assert.Equal(t, input.AdminUser.LastName, user.LastName)
 	assert.Equal(t, input.AdminUser.Email, user.Email)
+	assert.Equal(t, UserSystemRoleAdmin, user.SystemRole)
 	assert.NotEqual(t, "", user.Access)
 	access := user.Access
 
 	defer DeleteUser(user.ID)
-	code, res, err = testEndpoint(http.MethodGet, "/site", b, routeConfigureSite, access)
+	code, res, err = testEndpoint(http.MethodGet, "/site", b, routeAllConfigureSite, access)
 	assert.Equal(t, http.StatusOK, code, res)
 	assert.Nil(t, err)
 
+	// now update the site
+	updateInfo := &Site{
+		Name:      "An Updated Test",
+		ShortName: "test-test",
+	}
+	b.Reset()
+	encoder.Encode(updateInfo)
+
+	// try some bad calls first
+	code, res, err = testEndpoint(http.MethodPatch, "/admin/site", b, routeAdminUpdateSite, "")
+	assert.Equal(t, http.StatusUnauthorized, code, res)
+	assert.Nil(t, err)
+	code, res, err = testEndpoint(http.MethodPatch, "/admin/site", b, routeAdminUpdateSite, nonAdmin.Access)
+	assert.Equal(t, http.StatusForbidden, code, res)
+	assert.Nil(t, err)
+
+	code, res, err = testEndpoint(http.MethodPatch, "/admin/site", b, routeAdminUpdateSite, access)
+	assert.Equal(t, http.StatusOK, code, res)
+	assert.Nil(t, err)
+
+	code, res, err = testEndpoint(http.MethodGet, "/site", b, routeAllConfigureSite, access)
+	assert.Equal(t, http.StatusOK, code, res)
+	assert.Nil(t, err)
+	foundSite := &Site{}
+	m, err = testEndpointResultToMap(res)
+	assert.Nil(t, err)
+	err = mapstructure.Decode(m, foundSite)
+	assert.Nil(t, err)
+	assert.Equal(t, updateInfo.Name, foundSite.Name)
+	assert.Equal(t, updateInfo.ShortName, foundSite.ShortName)
 }

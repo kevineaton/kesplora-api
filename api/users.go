@@ -273,7 +273,6 @@ func parseJWT(input string) (jwtUser, error) {
 		u := claims.User
 		return u, nil
 	}
-	fmt.Printf("\n\t\t2: %+v\n", err)
 	return jwtUser{}, errors.New("could not parse jwt")
 }
 

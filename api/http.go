@@ -22,6 +22,9 @@ const appContextKeyFound key = "found"
 // AppContextKeyExpired is the expired key
 const appContextKeyExpired key = "expired"
 
+// appContextSite is the key for the site
+const appContextSite key = "site"
+
 // apiReturn is the primary return shape for JSON-based returns; depending if it's an error or a success, the
 // actual JSON fields may differ
 type apiReturn struct {
@@ -82,6 +85,7 @@ func sendAPIError(w http.ResponseWriter, key string, systemError error, data int
 	})
 }
 
+// checkRoutePermissions is a helper to check the various security permissions for a route
 func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *routePermissionsCheckOptions) *routePermissionsCheckResults {
 	results := &routePermissionsCheckResults{}
 	// first, check if the site is active
@@ -159,6 +163,17 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	results.IsValid = true
 
 	return results
+}
+
+// getUserFromHTTPContext is a helper to get the user id from the context; this is
+// useful for getting the user after the automated checks have been run but we don't
+// want to call the check again
+func getUserFromHTTPContext(r *http.Request) (*jwtUser, error) {
+	user, userOK := r.Context().Value(appContextKeyUser).(jwtUser)
+	if !userOK {
+		return nil, errors.New("invalid user")
+	}
+	return &user, nil
 }
 
 func testEndpoint(method string, endpoint string, data io.Reader, handler http.HandlerFunc, accessToken string) (code int, body *bytes.Buffer, err error) {

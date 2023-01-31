@@ -51,10 +51,10 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.Nil(err)
 	defer DeleteProject(project.ID)
 
-	code, res, err := testEndpoint(http.MethodPost, "/modules", b, routeCreateModule, admin.Access)
+	code, res, err := testEndpoint(http.MethodPost, "/admin/modules", b, routeAdminCreateModule, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusBadRequest, code, res)
-	code, res, err = testEndpoint(http.MethodPost, "/modules", b, routeCreateModule, user.Access)
+	code, res, err = testEndpoint(http.MethodPost, "/admin/modules", b, routeAdminCreateModule, user.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
 
@@ -65,7 +65,7 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	}
 	b.Reset()
 	encoder.Encode(input)
-	code, res, err = testEndpoint(http.MethodPost, "/modules", b, routeCreateModule, admin.Access)
+	code, res, err = testEndpoint(http.MethodPost, "/admin/modules", b, routeAdminCreateModule, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusCreated, code, res)
 	m, err := testEndpointResultToMap(res)
@@ -83,7 +83,7 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	}
 	b.Reset()
 	encoder.Encode(input)
-	code, res, err = testEndpoint(http.MethodPost, "/modules", b, routeCreateModule, admin.Access)
+	code, res, err = testEndpoint(http.MethodPost, "/admin/modules", b, routeAdminCreateModule, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusCreated, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -95,7 +95,7 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	defer DeleteModule(module2.ID)
 
 	// get all on platform
-	code, res, err = testEndpoint(http.MethodGet, "/modules", b, routeGetAllSiteModules, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, "/admin/modules", b, routeAdminGetAllSiteModules, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	mS, err := testEndpointResultToSlice(res)
@@ -120,15 +120,15 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.True(found2)
 
 	// put them on the project in the flow
-	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/order/1", project.ID, module1.ID), b, routeLinkModuleAndProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/admin/projects/%d/modules/%d/order/1", project.ID, module1.ID), b, routeAdminLinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
-	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/order/2", project.ID, module2.ID), b, routeLinkModuleAndProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/admin/projects/%d/modules/%d/order/2", project.ID, module2.ID), b, routeAdminLinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
 	// get them, verify the order
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d/flow", project.ID), b, routeGetModulesOnProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/flow", project.ID), b, routeAdminGetModulesOnProject, admin.Access)
 	suite.Nil(err)
 	require.Equal(http.StatusOK, code, res)
 	mS, err = testEndpointResultToSlice(res)
@@ -154,7 +154,7 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.True(found2)
 
 	// get each individually
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/modules/%d", module1.ID), b, routeGetModuleByID, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/modules/%d", module1.ID), b, routeAdminGetModuleByID, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -167,7 +167,7 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.Equal(module1.Status, get1.Status)
 	suite.Equal(module1.Description, get1.Description)
 
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/modules/%d", module2.ID), b, routeGetModuleByID, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/modules/%d", module2.ID), b, routeAdminGetModuleByID, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -188,12 +188,12 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	}
 	b.Reset()
 	encoder.Encode(update)
-	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/modules/%d", module1.ID), b, routeUpdateModule, admin.Access)
+	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/admin/modules/%d", module1.ID), b, routeAdminUpdateModule, admin.Access)
 	suite.Nil(err)
 	suite.Equal(code, http.StatusOK, res)
 
 	// get
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/modules/%d", module1.ID), b, routeGetModuleByID, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/modules/%d", module1.ID), b, routeAdminGetModuleByID, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -207,12 +207,12 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.Equal(update.Description, updated1.Description)
 
 	// change the order
-	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/projects/%d/modules/%d/order/9", project.ID, module1.ID), b, routeLinkModuleAndProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPut, fmt.Sprintf("/admin/projects/%d/modules/%d/order/9", project.ID, module1.ID), b, routeAdminLinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
 	// get to check the order
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d/flow", project.ID), b, routeGetModulesOnProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/flow", project.ID), b, routeAdminGetModulesOnProject, admin.Access)
 	suite.Nil(err)
 	require.Equal(http.StatusOK, code, res)
 	mS, err = testEndpointResultToSlice(res)
@@ -239,17 +239,17 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.True(found2)
 
 	// delete module 1
-	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/modules/%d", module1.ID), b, routeDeleteModule, admin.Access)
+	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/admin/modules/%d", module1.ID), b, routeAdminDeleteModule, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
 	// make sure it's gone on a single GET
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/modules/%d", module1.ID), b, routeGetModuleByID, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/modules/%d", module1.ID), b, routeAdminGetModuleByID, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusNotFound, code, res)
 
 	// make sure it's not in the list
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d/flow", project.ID), b, routeGetModulesOnProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/flow", project.ID), b, routeAdminGetModulesOnProject, admin.Access)
 	suite.Nil(err)
 	require.Equal(http.StatusOK, code, res)
 	mS, err = testEndpointResultToSlice(res)
@@ -274,15 +274,15 @@ func (suite SuiteTestsModulesRoutes) TestModuleAdminRoutesCRUD() {
 	suite.True(found2)
 
 	// remove module 2 and make sure it exists but is gone from the flow
-	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/projects/%d/modules/%d", project.ID, module2.ID), b, routeUnlinkModuleAndProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/admin/projects/%d/modules/%d", project.ID, module2.ID), b, routeAdminUnlinkModuleAndProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/modules/%d", module2.ID), b, routeGetModuleByID, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/modules/%d", module2.ID), b, routeAdminGetModuleByID, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
 	// make sure it's not in the list
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d/flow", project.ID), b, routeGetModulesOnProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/flow", project.ID), b, routeAdminGetModulesOnProject, admin.Access)
 	suite.Nil(err)
 	require.Equal(http.StatusOK, code, res)
 	mS, err = testEndpointResultToSlice(res)

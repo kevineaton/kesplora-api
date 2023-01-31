@@ -29,6 +29,10 @@ type ConsentResponse struct {
 	ParticipantID                         int64  `json:"participantId" db:"participantId"` // will be 0 if the project specifies to not link them
 
 	ProjectCode string `json:"projectCode,omitempty"` // used for signup when the project needs a code
+
+	// these are used when the project must be anonymous, so a new account is created during consent
+	// and tied to a participant code
+	User *User `json:"user"`
 }
 
 const (

@@ -14,6 +14,9 @@ type Block struct {
 	BlockType    string      `json:"blockType" db:"blockType"`
 	Content      interface{} `json:"content,omitempty"`
 	FoundInFlows int64       `json:"foundInFlows" db:"foundInFlows"`
+
+	UserStatus    string `json:"userStatus,omitempty" db:"userStatus"`
+	LastUpdatedOn string `json:"lastUpdatedOn,omitempty" db:"lastUpdatedOn"`
 }
 
 const (
@@ -74,6 +77,24 @@ func GetBlockByID(blockID int64) (*Block, error) {
 	LEFT JOIN BlockModuleFlows bmf ON bmf.blockId = b.id 
 	WHERE b.id = ?
 	GROUP BY b.id, b.name, b.summary, b.blockType`, blockID)
+	return block, err
+}
+
+// GetModuleBlockForparticipant gets a single block for a participant; we take in all three levels to
+// ensure that the permissions are correct
+func GetModuleBlockForparticipant(participantID, projectID, moduleID, blockID int64) (*Block, error) {
+	block := &Block{}
+	defer block.processForAPI()
+	err := config.DBConnection.Get(block, `SELECT b.*, 
+	IFNULL(bus.status, 'not_started') AS userStatus,
+	IFNULL(bus.lastUpdatedOn, NOW()) AS lastUpdatedOn
+	FROM Blocks b, BlockModuleFlows bmf, Flows f
+	LEFT JOIN BlockUserStatus bus ON bus.userId = ? AND bus.blockId = ?
+	WHERE b.id = ? AND
+	b.id = bmf.blockId AND
+	bmf.moduleId = ? AND
+	bmf.moduleId = f.moduleId AND
+	f.projectId = ?;`, participantID, blockID, blockID, moduleID, projectID)
 	return block, err
 }
 
@@ -244,6 +265,9 @@ func (input *Block) processForDB() {
 func (input *Block) processForAPI() {
 	if input.Content == nil {
 		input.Content = map[string]string{}
+	}
+	if input.LastUpdatedOn != "" {
+		input.LastUpdatedOn, _ = parseTimeToTimeFormat(input.LastUpdatedOn, timeFormatAPI)
 	}
 }
 

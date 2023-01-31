@@ -6,31 +6,9 @@ import (
 	"github.com/go-chi/render"
 )
 
-// routeGetSite gets the site
-func routeGetSite(w http.ResponseWriter, r *http.Request) {
-	// this route is unauthenticated
-	site, err := GetSite()
-	if err != nil {
-		sendAPIError(w, api_error_site_get_error, err, map[string]string{})
-		return
-	}
-	if site.Status != SiteStatusActive {
-		sendAPIError(w, api_error_site_not_active, nil, map[string]string{})
-		return
-	}
-	sendAPIJSONData(w, http.StatusOK, site)
-}
-
-// routeUpdateSite updates the site
-func routeUpdateSite(w http.ResponseWriter, r *http.Request) {
-	routeResults := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !routeResults.IsValid {
-		return
-	}
-
+// routeAdminUpdateSite updates the site
+func routeAdminUpdateSite(w http.ResponseWriter, r *http.Request) {
+	// validity checked in middleware of router
 	site, err := GetSite()
 	if err != nil {
 		sendAPIError(w, api_error_site_get_error, err, map[string]string{})

@@ -45,7 +45,7 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	suite.Nil(err)
 	defer DeleteUser(user.ID)
 
-	code, res, err := testEndpoint(http.MethodPost, "/projects", b, routeCreateProject, admin.Access)
+	code, res, err := testEndpoint(http.MethodPost, "/admin/projects", b, routeAdminCreateProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusBadRequest, code, res)
 
@@ -55,7 +55,7 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	}
 	b.Reset()
 	encoder.Encode(input)
-	code, res, err = testEndpoint(http.MethodPost, "/projects", b, routeCreateProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPost, "/admin/projects", b, routeAdminCreateProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err := testEndpointResultToMap(res)
@@ -72,7 +72,7 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	defer DeleteProject(created.ID)
 
 	// get all projects for the site
-	code, res, err = testEndpoint(http.MethodGet, "/projects", b, routeGetProjects, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, "/admin/projects", b, routeAdminGetProjects, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	s, err := testEndpointResultToSlice(res)
@@ -80,7 +80,7 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	suite.NotZero(len(s))
 
 	// get the individual
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d", created.ID), b, routeGetProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d", created.ID), b, routeAdminGetProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -108,12 +108,12 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	}
 	b.Reset()
 	encoder.Encode(updateInput)
-	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/projects/%d", created.ID), b, routeUpdateProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/admin/projects/%d", created.ID), b, routeAdminUpdateProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
 	// get it again
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d", created.ID), b, routeGetProject, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d", created.ID), b, routeAdminGetProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -134,14 +134,14 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	// try as a normal user
 
 	// update and create should be blocked
-	code, res, err = testEndpoint(http.MethodPost, "/projects", b, routeCreateProject, user.Access)
+	code, res, err = testEndpoint(http.MethodPost, "/admin/projects", b, routeAdminCreateProject, user.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
-	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/projects/%d", created.ID), b, routeUpdateProject, user.Access)
+	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/admin/projects/%d", created.ID), b, routeAdminUpdateProject, user.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
 
-	code, res, err = testEndpoint(http.MethodGet, "/projects", b, routeGetProjects, user.Access)
+	code, res, err = testEndpoint(http.MethodGet, "/projects", b, routeParticipantGetProjects, user.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	suite.Nil(err)
@@ -150,7 +150,7 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	suite.Nil(err)
 	suite.NotZero(len(s))
 
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d", created.ID), b, routeGetProject, user.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/projects/%d", created.ID), b, routeAllGetProject, user.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)

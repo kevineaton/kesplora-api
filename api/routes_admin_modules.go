@@ -10,20 +10,8 @@ import (
 	"github.com/go-chi/render"
 )
 
-//
-// Note: For now, these only support the admin paths. The user paths will be a second iteration.
-//
-
-// routeCreateModule creates a new module
-func routeCreateModule(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
-
+// routeAdminCreateModule creates a new module
+func routeAdminCreateModule(w http.ResponseWriter, r *http.Request) {
 	input := &Module{}
 	render.Bind(r, input)
 	if input.Name == "" {
@@ -44,16 +32,8 @@ func routeCreateModule(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusCreated, input)
 }
 
-// routeGetAllSiteModules gets all of the modules created on a site
-func routeGetAllSiteModules(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
-
+// routeAdminGetAllSiteModules gets all of the modules created on a site
+func routeAdminGetAllSiteModules(w http.ResponseWriter, r *http.Request) {
 	mods, err := GetAllModulesForSite()
 	if err != nil {
 		sendAPIError(w, api_error_module_not_found, err, map[string]interface{}{
@@ -65,15 +45,8 @@ func routeGetAllSiteModules(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, mods)
 }
 
-// routeGetModuleByID gets a single module
-func routeGetModuleByID(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminGetModuleByID gets a single module
+func routeAdminGetModuleByID(w http.ResponseWriter, r *http.Request) {
 	moduleID, moduleErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	if moduleErr != nil {
 		sendAPIError(w, api_error_invalid_path, moduleErr, map[string]string{})
@@ -90,15 +63,8 @@ func routeGetModuleByID(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, found)
 }
 
-// routeUpdateModule updates a module
-func routeUpdateModule(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminUpdateModule updates a module
+func routeAdminUpdateModule(w http.ResponseWriter, r *http.Request) {
 	moduleID, moduleErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	if moduleErr != nil {
 		sendAPIError(w, api_error_invalid_path, moduleErr, map[string]string{})
@@ -137,15 +103,8 @@ func routeUpdateModule(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// routeDeleteModule deletes a module and removes it from all flows
-func routeDeleteModule(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminDeleteModule deletes a module and removes it from all flows
+func routeAdminDeleteModule(w http.ResponseWriter, r *http.Request) {
 	moduleID, moduleErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	if moduleErr != nil {
 		sendAPIError(w, api_error_invalid_path, moduleErr, map[string]string{})
@@ -165,15 +124,8 @@ func routeDeleteModule(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeGetModulesOnProject gets all the modules on the platform
-func routeGetModulesOnProject(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminGetModulesOnProject gets all the modules on the platform
+func routeAdminGetModulesOnProject(w http.ResponseWriter, r *http.Request) {
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	if projectIDErr != nil {
 		sendAPIError(w, api_error_invalid_path, projectIDErr, map[string]string{})
@@ -192,15 +144,8 @@ func routeGetModulesOnProject(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, modules)
 }
 
-// routeLinkModuleAndProject links a module and a project in a specific order
-func routeLinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminLinkModuleAndProject links a module and a project in a specific order
+func routeAdminLinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	moduleID, moduleIDErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	order, orderErr := strconv.ParseInt(chi.URLParam(r, "order"), 10, 64)
@@ -239,15 +184,8 @@ func routeLinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeUnlinkModuleAndProject removes a module from a project
-func routeUnlinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminUnlinkModuleAndProject removes a module from a project
+func routeAdminUnlinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	moduleID, moduleIDErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
 	if projectIDErr != nil || moduleIDErr != nil {
@@ -285,15 +223,8 @@ func routeUnlinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeUnlinkAllModulesFromProject removes all modules from a project
-func routeUnlinkAllModulesFromProject(w http.ResponseWriter, r *http.Request) {
-	results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
-		MustBeAdmin:     true,
-		ShouldSendError: true,
-	})
-	if !results.IsValid {
-		return
-	}
+// routeAdminUnlinkAllModulesFromProject removes all modules from a project
+func routeAdminUnlinkAllModulesFromProject(w http.ResponseWriter, r *http.Request) {
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	if projectIDErr != nil {
 		sendAPIError(w, api_error_invalid_path, errors.New("invalid path"), map[string]string{})

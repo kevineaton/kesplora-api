@@ -12,8 +12,8 @@ type siteConfigurationInput struct {
 	AdminUser User   `json:"user"`
 }
 
-// routeGetSiteConfiguration gets whether the site is configured or not
-func routeGetSiteConfiguration(w http.ResponseWriter, r *http.Request) {
+// routeAllGetSiteConfiguration gets whether the site is configured or not
+func routeAllGetSiteConfiguration(w http.ResponseWriter, r *http.Request) {
 	// this route is unauthenticated
 	site, err := GetSite()
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{
@@ -21,8 +21,8 @@ func routeGetSiteConfiguration(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// routeConfigureSite configures the site
-func routeConfigureSite(w http.ResponseWriter, r *http.Request) {
+// routeAllConfigureSite configures the site
+func routeAllConfigureSite(w http.ResponseWriter, r *http.Request) {
 	// this route is unauthenticated
 	site, err := GetSite()
 	exists := false

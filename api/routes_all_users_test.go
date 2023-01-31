@@ -47,7 +47,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRoutes() {
 	require.Nil(err)
 	defer DeleteUser(user.ID)
 
-	code, res, err := testEndpoint(http.MethodPost, "/login", b, routeUserLogin, "")
+	code, res, err := testEndpoint(http.MethodPost, "/login", b, routeAllUserLogin, "")
 	suite.Nil(err)
 	suite.Equal(http.StatusBadRequest, code, res)
 
@@ -56,7 +56,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRoutes() {
 		"login":    user.Email,
 		"password": plainPassword,
 	})
-	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeUserLogin, "")
+	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeAllUserLogin, "")
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err := testEndpointResultToMap(res)
@@ -70,7 +70,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRoutes() {
 	suite.Equal(user.SystemRole, loggedIn.SystemRole)
 
 	// get the profile
-	code, res, err = testEndpoint(http.MethodGet, "/me", b, routeGetUserProfile, loggedIn.Access)
+	code, res, err = testEndpoint(http.MethodGet, "/me", b, routeAllGetUserProfile, loggedIn.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -94,12 +94,12 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRoutes() {
 	}
 	b.Reset()
 	encoder.Encode(updated)
-	code, res, err = testEndpoint(http.MethodPatch, "/me", b, routeUpdateUserProfile, loggedIn.Access)
+	code, res, err = testEndpoint(http.MethodPatch, "/me", b, routeAllUpdateUserProfile, loggedIn.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 
 	// get it again
-	code, res, err = testEndpoint(http.MethodGet, "/me", b, routeGetUserProfile, loggedIn.Access)
+	code, res, err = testEndpoint(http.MethodGet, "/me", b, routeAllGetUserProfile, loggedIn.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
@@ -119,7 +119,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRoutes() {
 		"login":    user.Email,
 		"password": plainPassword,
 	})
-	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeUserLogin, "")
+	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeAllUserLogin, "")
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
 	b.Reset()
@@ -127,7 +127,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRoutes() {
 		"login":    updated.Email,
 		"password": updatedPlainPassword,
 	})
-	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeUserLogin, "")
+	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeAllUserLogin, "")
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
 }
@@ -156,7 +156,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRefresh() {
 		"login":    user.Email,
 		"password": plainPassword,
 	})
-	code, res, err := testEndpoint(http.MethodPost, "/login", b, routeUserLogin, "")
+	code, res, err := testEndpoint(http.MethodPost, "/login", b, routeAllUserLogin, "")
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	found := &User{}
@@ -184,7 +184,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRefresh() {
 	b.Reset()
 	encoder.Encode(refreshInput)
 
-	code, res, err = testEndpoint(http.MethodPost, "/me/refresh", b, routeUserRefreshAccess, "")
+	code, res, err = testEndpoint(http.MethodPost, "/me/refresh", b, routeAllUserRefreshAccess, "")
 	suite.Nil(err)
 	require.Equal(http.StatusOK, code, res)
 	found2 := &User{}
@@ -197,13 +197,13 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRefresh() {
 	suite.NotEqual(found.Expires, found2.Expires)
 
 	// logout; that should delete the refresh token so refresh should fail
-	code, res, err = testEndpoint(http.MethodPost, "/logout", b, routeUserRefreshAccess, found.Access)
+	code, res, err = testEndpoint(http.MethodPost, "/logout", b, routeAllUserRefreshAccess, found.Access)
 	suite.Nil(err)
 	require.Equal(http.StatusOK, code, res)
 
 	b.Reset()
 	encoder.Encode(refreshInput)
-	code, res, err = testEndpoint(http.MethodPost, "/me/refresh", b, routeUserRefreshAccess, "")
+	code, res, err = testEndpoint(http.MethodPost, "/me/refresh", b, routeAllUserRefreshAccess, "")
 	suite.Nil(err)
 	suite.Equal(http.StatusUnauthorized, code, res)
 }
