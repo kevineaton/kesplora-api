@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -196,14 +195,11 @@ func routeAdminDeleteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	err = handleBlockDelete(block.BlockType, blockID)
 	if err != nil {
-		fmt.Println("Here")
-		fmt.Println(err.Error())
 		sendAPIError(w, api_error_block_delete_err, err, map[string]string{})
 		return
 	}
 	err = DeleteBlock(blockID)
 	if err != nil {
-		fmt.Println(err.Error())
 		sendAPIError(w, api_error_block_delete_err, err, map[string]string{})
 		return
 	}

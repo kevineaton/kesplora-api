@@ -76,6 +76,7 @@ func CreateProject(input *Project) error {
 		showStatus = :showStatus,
 		signupStatus = :signupStatus,
 		maxParticipants = :maxParticipants,
+		participantVisibility = :participantVisibility,
 		participantMinimumAge = :participantMinimumAge,
 		connectParticipantToConsentForm = :connectParticipantToConsentForm`, input)
 	if err != nil {
@@ -99,6 +100,7 @@ func UpdateProject(input *Project) error {
 		showStatus = :showStatus,
 		signupStatus = :signupStatus,
 		maxParticipants = :maxParticipants,
+		participantVisibility = :participantVisibility,
 		participantMinimumAge = :participantMinimumAge,
 		connectParticipantToConsentForm = :connectParticipantToConsentForm
 		WHERE id = :id`, input)
@@ -219,6 +221,9 @@ func createTestProject(defaults *Project) error {
 	}
 	if defaults.Status == "" {
 		defaults.Status = ProjectStatusActive
+	}
+	if defaults.ParticipantVisibility == "" {
+		defaults.ParticipantVisibility = ProjectParticipantVisibilityFull
 	}
 	return CreateProject(defaults)
 }

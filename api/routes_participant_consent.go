@@ -35,7 +35,6 @@ func routeParticipantGetConsentResponse(w http.ResponseWriter, r *http.Request) 
 		sendAPIError(w, api_error_consent_response_get_err, err, nil)
 		return
 	}
-
 	if results.User.ID != response.ParticipantID {
 		sendAPIError(w, api_error_consent_response_get_err, errors.New("unavailable"), nil)
 		return

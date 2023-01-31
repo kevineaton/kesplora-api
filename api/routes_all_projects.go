@@ -226,9 +226,7 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// create the actual user
-		fmt.Printf("\n------------------------\nInput\n%+v\n", input.User)
 		err = CreateUser(input.User)
-		fmt.Printf("\nBack: %+v\n", err)
 		if err != nil {
 			sendAPIError(w, api_error_consent_response_participant_save_err, err, map[string]interface{}{})
 			return
@@ -317,6 +315,5 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: if the new user status is pending, we need to send the email validation
 	// email and send them through the "confirm account" process
-
 	sendAPIJSONData(w, http.StatusOK, input)
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -113,7 +112,6 @@ func routeAdminDeleteModule(w http.ResponseWriter, r *http.Request) {
 
 	err := DeleteModule(moduleID)
 	if err != nil {
-		fmt.Printf("\n%+v\n", err)
 		sendAPIError(w, api_error_module_not_found, err, map[string]interface{}{
 			"moduleID": moduleID,
 		})

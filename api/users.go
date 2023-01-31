@@ -181,10 +181,10 @@ func createTestUser(defaults *User) error {
 		defaults.Password = fmt.Sprintf("test_P@%d!!", rand.Int63n(99999999999999))
 	}
 	if defaults.FirstName == "" {
-		defaults.FirstName = "Admin"
+		defaults.FirstName = "User"
 	}
 	if defaults.LastName == "" {
-		defaults.LastName = "Admin"
+		defaults.LastName = "User"
 	}
 	if defaults.Email == "" {
 		defaults.Email = fmt.Sprintf("test_%d@kesplora.com", rand.Int63n(99999999999999))

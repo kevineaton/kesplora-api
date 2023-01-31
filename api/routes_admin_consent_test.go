@@ -31,6 +31,8 @@ func (suite SuiteTestsConsentRoutes) TestConsentAdminRoutes() {
 
 	// first, create an admin
 	admin := &User{
+		FirstName:  "First Admin",
+		LastName:   "Last Admin",
 		SystemRole: UserSystemRoleAdmin,
 	}
 	err := createTestUser(admin)
@@ -39,23 +41,29 @@ func (suite SuiteTestsConsentRoutes) TestConsentAdminRoutes() {
 
 	// now a user
 	user1 := &User{
-		SystemRole: UserSystemRoleUser,
+		FirstName:  "First 1",
+		LastName:   "Last 1",
+		SystemRole: UserSystemRoleParticipant,
 	}
 	err = createTestUser(user1)
 	suite.Nil(err)
 	defer DeleteUser(user1.ID)
 
 	user2 := &User{
-		SystemRole: UserSystemRoleUser,
+		FirstName:  "First 2",
+		LastName:   "Last 2",
+		SystemRole: UserSystemRoleParticipant,
 	}
 	err = createTestUser(user2)
 	suite.Nil(err)
 	defer DeleteUser(user2.ID)
 
 	project := &Project{
-		SignupStatus:    ProjectSignupStatusWithCode,
-		ShortCode:       "test_code",
-		MaxParticipants: 1,
+		SignupStatus:                    ProjectSignupStatusWithCode,
+		ShortCode:                       "test_code",
+		MaxParticipants:                 1,
+		ConnectParticipantToConsentForm: "yes",
+		ParticipantVisibility:           ProjectParticipantVisibilityFull,
 	}
 	err = createTestProject(project)
 	suite.Nil(err)
@@ -120,13 +128,13 @@ func (suite SuiteTestsConsentRoutes) TestConsentAdminRoutes() {
 	// allow user 1 to respond and check paths
 	user1ResponseInput := &ConsentResponse{
 		ConsentStatus:                         ConsentResponseStatusAccepted,
-		ParticipantProvidedFirstName:          "First",
-		ParticipantProvidedLastName:           "Last",
+		ParticipantProvidedFirstName:          "User 1 First",
+		ParticipantProvidedLastName:           "User 1 Last",
 		ParticipantProvidedContactInformation: "test.user@kesplora.com",
 	}
 	b.Reset()
 	encoder.Encode(user1ResponseInput)
-	code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/participant/projects/%d/consent/responses", project.ID), b, routeAllCreateConsentResponse, user1.Access)
+	code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/projects/%d/consent/responses", project.ID), b, routeAllCreateConsentResponse, user1.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
 
@@ -134,7 +142,7 @@ func (suite SuiteTestsConsentRoutes) TestConsentAdminRoutes() {
 	user1ResponseInput.ProjectCode = project.ShortCode
 	b.Reset()
 	encoder.Encode(user1ResponseInput)
-	code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/participant/projects/%d/consent/responses", project.ID), b, routeAllCreateConsentResponse, user1.Access)
+	code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/projects/%d/consent/responses", project.ID), b, routeAllCreateConsentResponse, user1.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	user1Response := &ConsentResponse{}
@@ -154,15 +162,14 @@ func (suite SuiteTestsConsentRoutes) TestConsentAdminRoutes() {
 	}
 	b.Reset()
 	encoder.Encode(user2ResponseInput)
-	code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/participant/projects/%d/consent/responses", project.ID), b, routeAllCreateConsentResponse, user2.Access)
+	code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/projects/%d/consent/responses", project.ID), b, routeAllCreateConsentResponse, user2.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
-
 	// make sure viewing is limited to admin and user 1
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/participant/projects/%d/consent/responses/%d", project.ID, user1Response.ID), b, routeAdminGetConsentResponse, user1.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/participant/projects/%d/consent/responses/%d", project.ID, user1Response.ID), b, routeParticipantGetConsentResponse, user1.Access)
 	suite.Nil(err)
-	suite.Equal(http.StatusOK, code, res)
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/participant/projects/%d/consent/responses/%d", project.ID, user1Response.ID), b, routeAdminGetConsentResponse, user2.Access)
+	require.Equal(http.StatusOK, code, res)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/participant/projects/%d/consent/responses/%d", project.ID, user1Response.ID), b, routeParticipantGetConsentResponse, user2.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
 	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/consent/responses/%d", project.ID, user1Response.ID), b, routeAdminGetConsentResponse, admin.Access)
@@ -256,7 +263,7 @@ func (suite SuiteTestsConsentRoutes) TestConsentAdminBadRoutes() {
 	suite.Equal(http.StatusForbidden, code, res)
 	code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/participant/projects/%s/consent/responses", "a"), b, routeAllCreateConsentResponse, admin.Access)
 	suite.Nil(err)
-	suite.Equal(http.StatusBadRequest, code, res)
+	suite.Equal(http.StatusForbidden, code, res)
 	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/consent/responses", -1), b, routeAdminGetConsentResponses, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusForbidden, code, res)
