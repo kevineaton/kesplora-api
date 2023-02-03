@@ -14,6 +14,7 @@ type Block struct {
 	BlockType    string      `json:"blockType" db:"blockType"`
 	Content      interface{} `json:"content,omitempty"`
 	FoundInFlows int64       `json:"foundInFlows" db:"foundInFlows"`
+	AllowReset   string      `json:"allowReset" db:"allowReset"`
 
 	UserStatus    string `json:"userStatus,omitempty" db:"userStatus"`
 	LastUpdatedOn string `json:"lastUpdatedOn,omitempty" db:"lastUpdatedOn"`
@@ -46,7 +47,7 @@ func isValidBlockType(search string) bool {
 func CreateBlock(input *Block) error {
 	input.processForDB()
 	defer input.processForAPI()
-	res, err := config.DBConnection.NamedExec(`INSERT INTO Blocks SET name = :name, summary = :summary, blockType = :blockType`, input)
+	res, err := config.DBConnection.NamedExec(`INSERT INTO Blocks SET name = :name, summary = :summary, blockType = :blockType, allowReset = :allowReset`, input)
 	if err != nil {
 		return err
 	}
@@ -102,7 +103,7 @@ func GetModuleBlockForparticipant(participantID, projectID, moduleID, blockID in
 func UpdateBlock(input *Block) error {
 	input.processForDB()
 	defer input.processForAPI()
-	_, err := config.DBConnection.NamedExec(`UPDATE Blocks SET name = :name, blockType = :blockType, summary = :summary WHERE id = :id`, input)
+	_, err := config.DBConnection.NamedExec(`UPDATE Blocks SET name = :name, blockType = :blockType, summary = :summary, allowReset = :allowReset WHERE id = :id`, input)
 	return err
 }
 
@@ -259,6 +260,9 @@ func handleBlockDelete(blockType string, blockID int64) error {
 func (input *Block) processForDB() {
 	if input.BlockType == "" {
 		input.BlockType = BlockTypeText
+	}
+	if input.AllowReset == "" {
+		input.AllowReset = Yes
 	}
 }
 

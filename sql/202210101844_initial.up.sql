@@ -64,6 +64,7 @@ CREATE TABLE `Blocks` (
   `name` varchar(128) NOT NULL,
   `summary` varchar(2048) NOT NULL,
   `blockType` enum('other','survey','presentation', 'text', 'external') NOT NULL DEFAULT 'other',
+  `allowReset` enum('yes', 'no') NOT NULL DEFAULT 'yes',
   PRIMARY KEY (`id`),
   KEY `blockType` (`blockType`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -74,6 +75,54 @@ CREATE TABLE `BlockModuleFlows` (
   `moduleId` int(11) NOT NULL,
   `flowOrder` int(11) NOT NULL,
   PRIMARY KEY (`blockId`, `moduleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `BlockForm`;
+CREATE TABLE `BlockForm` (
+  `blockId` int(11) NOT NULL,
+  `formType` ENUM('survey', 'quiz') NOT NULL DEFAULT 'survey',
+  `allowResubmit` ENUM('yes', 'no') DEFAULT 'yes',
+  PRIMARY KEY (`blockId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockFormQuestions`;
+CREATE TABLE `BlockFormQuestions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `blockId` int(11) NOT NULL,
+  `questionType` enum('multiple','single','short','long') DEFAULT NULL,
+  `question` varchar(1024) NOT NULL DEFAULT '',
+  `formOrder` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY (`blockId`),
+  KEY (`formOrder`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockFormQuestionOptions`;
+CREATE TABLE `BlockFormQuestionOptions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `questionId` int(11) NOT NULL,
+  `optionText` varchar(1024) NOT NULL DEFAULT '',
+  `optionOrder` int(11) DEFAULT NULL,
+  `optionIsCorrect` ENUM('na', 'yes', 'no') NOT NULL DEFAULT 'na',
+  PRIMARY KEY (`id`),
+  KEY (`questionId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `BlockFormQuestionResponses`;
+CREATE TABLE `BlockFormQuestionResponses` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `blockId` int(11) NOT NULL,
+  `questionId` int(11) NOT NULL,
+  `userId` int(11) NOT NULL,
+  `optionId` int(11) NOT NULL,
+  `submitted` datetime NOT NULL,
+  `textResponse` varchar(2048) NOT NULL default '',
+  PRIMARY KEY (`id`),
+  KEY (`optionId`),
+  KEY (`questionId`),
+  KEY (`userId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -167,24 +216,5 @@ CREATE TABLE `BlockPresentation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `BlockSurvey`;
-CREATE TABLE `BlockSurvey` (
-  `blockId` int(11) NOT NULL,
-  PRIMARY KEY (`blockId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 DROP TABLE IF EXISTS `BlockSurveyQuestion`;
-CREATE TABLE `BlockSurveyQuestion` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `blockId` int(11) NOT NULL,
-  `questionType` enum('multiple','single','short','long') DEFAULT NULL,
-  `question` varchar(1024) NOT NULL DEFAULT '',
-  `surveyOrder` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 DROP TABLE IF EXISTS `BlockSurveyQuestionOptions`;
-CREATE TABLE `BlockSurveyQuestionOptions` (
-  `questionId` int(11) NOT NULL,
-  `optionText` varchar(1024) NOT NULL DEFAULT '',
-  `optionOrder` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
