@@ -94,6 +94,19 @@ const (
 	api_error_block_delete_err           = "api_error_block_delete_err"
 
 	api_error_block_status_save_err = "api_error_block_status_save_err"
+
+	// file errors
+	api_error_file_upload_no_provider   = "api_error_file_upload_no_provider"
+	api_error_file_upload_parse_general = "api_error_file_upload_parse_general"
+	api_error_file_upload_parse_form    = "api_error_file_upload_parse_form"
+	api_error_file_upload_read          = "api_error_file_upload_read"
+	api_error_file_upload_upload        = "api_error_file_upload_upload"
+	api_error_file_upload_meta_save     = "api_error_file_upload_meta_save"
+	api_error_file_no_exist             = "api_error_file_no_exist"
+	api_error_file_download             = "api_error_file_download"
+	api_error_file_delete_remote        = "api_error_file_delete_remote"
+	api_error_file_delete_meta          = "api_error_file_delete_meta"
+	api_error_file_update_meta          = "api_error_file_update_meta"
 )
 
 // apiErrors is a mapping of keys to data
@@ -336,5 +349,51 @@ var apiErrors = map[string]apiError{
 	api_error_block_status_save_err: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save that status",
+	},
+
+	// files
+	api_error_file_upload_no_provider: {
+		Code:    http.StatusBadRequest,
+		Message: "site does not support file uploads",
+	},
+	api_error_file_upload_parse_general: {
+		Code:    http.StatusBadRequest,
+		Message: "could not parse the file upload, make sure it is sent as multi-part",
+	},
+	api_error_file_upload_parse_form: {
+		Code:    http.StatusBadRequest,
+		Message: "could not parse the form, make sure the key is file",
+	},
+	api_error_file_upload_read: {
+		Code:    http.StatusBadRequest,
+		Message: "could not read the data in that file",
+	},
+	api_error_file_upload_upload: {
+		Code:    http.StatusBadRequest,
+		Message: "could not upload the file to the remote storage",
+	},
+	api_error_file_upload_meta_save: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save the file meta data",
+	},
+	api_error_file_no_exist: {
+		Code:    http.StatusForbidden,
+		Message: "file does not exist or you don't have permission",
+	},
+	api_error_file_download: {
+		Code:    http.StatusBadRequest,
+		Message: "could not download the file",
+	},
+	api_error_file_delete_remote: {
+		Code:    http.StatusBadRequest,
+		Message: "could not delete the file from the provider",
+	},
+	api_error_file_delete_meta: {
+		Code:    http.StatusBadRequest,
+		Message: "could not delete the file meta data",
+	},
+	api_error_file_update_meta: {
+		Code:    http.StatusBadRequest,
+		Message: "could not update the file metadata",
 	},
 }

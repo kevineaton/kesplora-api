@@ -22,7 +22,7 @@ func routeAdminCreateBlock(w http.ResponseWriter, r *http.Request) {
 	input := &Block{}
 	render.Bind(r, input)
 
-	if input.Name == "" || input.Summary == "" {
+	if input.Name == "" {
 		sendAPIError(w, api_error_block_missing_data, errors.New("missing data"), map[string]interface{}{
 			"input": input,
 		})
@@ -116,7 +116,6 @@ func routeAdminUnlinkAllBlocksFromModule(w http.ResponseWriter, r *http.Request)
 
 // routeAdminGetBlock gets the block and content
 func routeAdminGetBlock(w http.ResponseWriter, r *http.Request) {
-
 	blockID, blockIDErr := strconv.ParseInt(chi.URLParam(r, "blockID"), 10, 64)
 	if blockIDErr != nil {
 		sendAPIError(w, api_error_invalid_path, blockIDErr, map[string]string{})

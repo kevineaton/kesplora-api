@@ -52,4 +52,4 @@ tasks:
   docker-cover:
     desc: Runs the latest built docker image and tests it
     cmds:
-      - docker-compose -f ./docker/docker-compose.yml --project-name kesplora-api up --build --always-recreate-deps --force-recreate --abort-on-container-exit --exit-code-from kesplora-api
+      - docker-compose -f ./docker/docker-compose-cover.yml --project-name kesplora-api up --build --always-recreate-deps --force-recreate --abort-on-container-exit --exit-code-from kesplora-api

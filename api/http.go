@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 )
 
 // avoid collisions with other keys that may enter the context
@@ -58,6 +60,13 @@ func sendAPIJSONData(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+// sendAPIFileData sends a file's binary data
+func sendAPIFileData(w http.ResponseWriter, code int, contentType string, payload []byte) {
+	w.WriteHeader(code)
+	w.Header().Set("Content-Type", contentType)
+	w.Write(payload)
 }
 
 // sendAPIError sends a JSON object for an API error; note that the systemError is not sent back
@@ -202,4 +211,57 @@ func testEndpointResultToSlice(bu *bytes.Buffer) ([]interface{}, error) {
 	err := json.Unmarshal(bu.Bytes(), &m)
 	mm := m["data"].([]interface{})
 	return mm, err
+}
+
+// processQuery searches for common query string parameters
+type commonQueryParams struct {
+	Start     string
+	End       string
+	Count     int64
+	Offset    int64
+	SortField string
+	SortDir   string
+}
+
+func processQuery(r *http.Request) commonQueryParams {
+	params := commonQueryParams{}
+
+	startQ := r.URL.Query().Get("start")
+	endQ := r.URL.Query().Get("end")
+	countQ := r.URL.Query().Get("count")
+	offsetQ := r.URL.Query().Get("offset")
+	sortDirQ := r.URL.Query().Get("sortDir")
+	sortField := r.URL.Query().Get("sort")
+
+	start, err := parseTimeToTimeFormat(startQ, timeFormatAPI)
+	if err != nil {
+		start = "2017-01-01T00:00:00Z"
+	}
+	params.Start = start
+
+	end, err := parseTimeToTimeFormat(endQ, timeFormatAPI)
+	if err != nil {
+		end = "2080-01-01 00:00:00" // TODO: fix in 2079
+	}
+	params.End = end
+
+	count, err := strconv.ParseInt(countQ, 10, 64)
+	if err != nil {
+		count = 500 // get a lot
+	}
+	params.Count = count
+
+	offset, err := strconv.ParseInt(offsetQ, 10, 64)
+	if err != nil {
+		offset = 0
+	}
+	params.Offset = offset
+
+	sortDir := strings.ToUpper(sortDirQ)
+	if sortDir != "ASC" && sortDir != "DESC" {
+		sortDir = "DESC"
+	}
+	params.SortDir = sortDir
+	params.SortField = sortField
+	return params
 }

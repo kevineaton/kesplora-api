@@ -151,10 +151,9 @@ func GetProjectsForParticipant(participantID int64) ([]Project, error) {
 // IsUserInProject is a helper to determine if a user is in a project or not
 func IsUserInProject(participantID, projectID int64) bool {
 	// TODO: cache this
-	projects := []Project{}
-	err := config.DBConnection.Select(&projects, `SELECT p.id FROM Projects p, ProjectUserLinks l 
-	WHERE l.userId = ? AND l.projectId = p.id ORDER BY status, name`, participantID)
-	return err == nil && len(projects) > 0
+	count := &CountReturn{}
+	err := config.DBConnection.Get(count, `SELECT COUNT(*) as count FROM ProjectUserLinks l WHERE l.userId = ? AND l.projectId = ?`, participantID, projectID)
+	return err == nil && count.Count > 0
 }
 
 // DeleteProject deletes a project. Note that this probably

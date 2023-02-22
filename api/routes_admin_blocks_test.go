@@ -160,54 +160,54 @@ func (suite SuiteTestsBlocksRoutes) TestSimpleBlocksAdminRoutesCRUD() {
 	suite.Equal(blockExternalInput.BlockType, blockExternalFound.BlockType)
 	suite.Equal(blockExternalContentInput.ExternalLink, blockExternalContentFound.ExternalLink)
 
-	blockPresentationContentInput := &BlockPresentation{
-		EmbedLink:        "https://api.kesplora.com",
-		PresentationType: "pdf",
+	blockEmbedContentInput := &BlockEmbed{
+		EmbedLink: "https://api.kesplora.com",
+		EmbedType: "internal_pdf",
 	}
-	blockPresentationInput := &Block{
-		Name:      "Presentation Block",
+	blockEmbedInput := &Block{
+		Name:      "Embed Block",
 		Summary:   "This is a simple external block",
-		BlockType: BlockTypePresentation,
-		Content:   blockPresentationContentInput,
+		BlockType: BlockTypeEmbed,
+		Content:   blockEmbedContentInput,
 	}
 	b.Reset()
-	encoder.Encode(blockPresentationInput)
-	code, res, err = testEndpoint(http.MethodPost, "/admin/blocks/presentation", b, routeAdminCreateBlock, admin.Access)
+	encoder.Encode(blockEmbedInput)
+	code, res, err = testEndpoint(http.MethodPost, "/admin/blocks/embed", b, routeAdminCreateBlock, admin.Access)
 	suite.Nil(err)
 	require.Equal(http.StatusCreated, code, res)
-	blockPresentation := &Block{}
+	blockEmbed := &Block{}
 	m, err = testEndpointResultToMap(res)
 	suite.Nil(err)
-	err = mapstructure.Decode(m, blockPresentation)
+	err = mapstructure.Decode(m, blockEmbed)
 	suite.Nil(err)
-	blockPresentationContent := &BlockPresentation{}
-	err = mapstructure.Decode(blockPresentation.Content, blockPresentationContent)
+	blockEmbedContent := &BlockEmbed{}
+	err = mapstructure.Decode(blockEmbed.Content, blockEmbedContent)
 	suite.Nil(err)
 	suite.NotZero(blockExternal.ID)
-	suite.Equal(blockPresentationInput.Name, blockPresentation.Name)
-	suite.Equal(blockPresentationInput.Summary, blockPresentation.Summary)
-	suite.Equal(blockPresentationInput.BlockType, blockPresentation.BlockType)
-	suite.Equal(blockPresentationContentInput.EmbedLink, blockPresentationContent.EmbedLink)
-	suite.Equal(blockPresentationContentInput.PresentationType, blockPresentationContent.PresentationType)
+	suite.Equal(blockEmbedInput.Name, blockEmbed.Name)
+	suite.Equal(blockEmbedInput.Summary, blockEmbed.Summary)
+	suite.Equal(blockEmbedInput.BlockType, blockEmbed.BlockType)
+	suite.Equal(blockEmbedContentInput.EmbedLink, blockEmbedContent.EmbedLink)
+	suite.Equal(blockEmbedContentInput.EmbedType, blockEmbedContent.EmbedType)
 	defer DeleteBlock(blockText.ID)
 	defer handleBlockDelete(blockText.BlockType, blockText.ID)
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/blocks/%d", blockPresentation.ID), b, routeAdminGetBlock, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/blocks/%d", blockEmbed.ID), b, routeAdminGetBlock, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
 	suite.Nil(err)
 	blockPresentationFound := &Block{}
-	blockPresentationContentFound := &BlockPresentation{}
+	blockPresentationContentFound := &BlockEmbed{}
 	err = mapstructure.Decode(m, blockPresentationFound)
 	suite.Nil(err)
 	err = mapstructure.Decode(blockPresentationFound.Content, blockPresentationContentFound)
 	suite.Nil(err)
-	suite.Equal(blockPresentation.ID, blockPresentationFound.ID)
-	suite.Equal(blockPresentationInput.Name, blockPresentationFound.Name)
-	suite.Equal(blockPresentationInput.Summary, blockPresentationFound.Summary)
-	suite.Equal(blockPresentationInput.BlockType, blockPresentationFound.BlockType)
-	suite.Equal(blockPresentationContentInput.EmbedLink, blockPresentationContentFound.EmbedLink)
-	suite.Equal(blockPresentationContentInput.PresentationType, blockPresentationContentFound.PresentationType)
+	suite.Equal(blockEmbed.ID, blockPresentationFound.ID)
+	suite.Equal(blockEmbedInput.Name, blockPresentationFound.Name)
+	suite.Equal(blockEmbedInput.Summary, blockPresentationFound.Summary)
+	suite.Equal(blockEmbedInput.BlockType, blockPresentationFound.BlockType)
+	suite.Equal(blockEmbedContentInput.EmbedLink, blockPresentationContentFound.EmbedLink)
+	suite.Equal(blockEmbedContentInput.EmbedType, blockPresentationContentFound.EmbedType)
 
 	// update each and verify each
 	updateExternal := &Block{
@@ -271,33 +271,33 @@ func (suite SuiteTestsBlocksRoutes) TestSimpleBlocksAdminRoutesCRUD() {
 	updatePresentation := &Block{
 		Name:    "Updated Presentation",
 		Summary: "Updated Presentation Summary",
-		Content: BlockPresentation{
-			EmbedLink:        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-			PresentationType: BlockPresentationTypeYoutube,
+		Content: BlockEmbed{
+			EmbedLink: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+			EmbedType: BlockEmbedTypeYoutube,
 		},
 	}
 	b.Reset()
 	encoder.Encode(updatePresentation)
-	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/admin/blocks/%d", blockPresentation.ID), b, routeAdminUpdateBlock, admin.Access)
+	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/admin/blocks/%d", blockEmbed.ID), b, routeAdminUpdateBlock, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/blocks/%d", blockPresentation.ID), b, routeAdminGetBlock, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/blocks/%d", blockEmbed.ID), b, routeAdminGetBlock, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	m, err = testEndpointResultToMap(res)
 	suite.Nil(err)
 	blockPresentationFoundUpdated := &Block{}
-	blockPresentationContentFoundUpdated := &BlockPresentation{}
+	blockPresentationContentFoundUpdated := &BlockEmbed{}
 	err = mapstructure.Decode(m, blockPresentationFoundUpdated)
 	suite.Nil(err)
 	err = mapstructure.Decode(blockPresentationFoundUpdated.Content, blockPresentationContentFoundUpdated)
 	suite.Nil(err)
-	suite.Equal(blockPresentation.ID, blockPresentationFoundUpdated.ID)
+	suite.Equal(blockEmbed.ID, blockPresentationFoundUpdated.ID)
 	suite.Equal(updatePresentation.Name, blockPresentationFoundUpdated.Name, m)
 	suite.Equal(updatePresentation.Summary, blockPresentationFoundUpdated.Summary)
-	suite.Equal(BlockTypePresentation, blockPresentationFoundUpdated.BlockType)
+	suite.Equal(BlockTypeEmbed, blockPresentationFoundUpdated.BlockType)
 	suite.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", blockPresentationContentFoundUpdated.EmbedLink)
-	suite.Equal(BlockPresentationTypeYoutube, blockPresentationContentFoundUpdated.PresentationType)
+	suite.Equal(BlockEmbedTypeYoutube, blockPresentationContentFoundUpdated.EmbedType)
 
 	// get for the site
 	code, res, err = testEndpoint(http.MethodGet, "/admin/blocks", b, routeAdminGetBlocksOnSite, user.Access)
@@ -319,7 +319,7 @@ func (suite SuiteTestsBlocksRoutes) TestSimpleBlocksAdminRoutesCRUD() {
 		if t.ID == blockExternal.ID {
 			foundExternal = true
 		}
-		if t.ID == blockPresentation.ID {
+		if t.ID == blockEmbed.ID {
 			foundPresentation = true
 		}
 		if t.ID == blockText.ID {
@@ -363,7 +363,7 @@ func (suite SuiteTestsBlocksRoutes) TestSimpleBlocksAdminRoutesCRUD() {
 		if t.ID == blockExternal.ID {
 			foundExternal = true
 		}
-		if t.ID == blockPresentation.ID {
+		if t.ID == blockEmbed.ID {
 			foundPresentation = true
 		}
 		if t.ID == blockText.ID {
@@ -401,7 +401,7 @@ func (suite SuiteTestsBlocksRoutes) TestSimpleBlocksAdminRoutesCRUD() {
 		if t.ID == blockExternal.ID {
 			foundExternal = true
 		}
-		if t.ID == blockPresentation.ID {
+		if t.ID == blockEmbed.ID {
 			foundPresentation = true
 		}
 		if t.ID == blockText.ID {
@@ -423,10 +423,10 @@ func (suite SuiteTestsBlocksRoutes) TestSimpleBlocksAdminRoutesCRUD() {
 	suite.Nil(err)
 	suite.Equal(http.StatusNotFound, code, res)
 
-	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/admin/blocks/%d", blockPresentation.ID), b, routeAdminDeleteBlock, admin.Access)
+	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/admin/blocks/%d", blockEmbed.ID), b, routeAdminDeleteBlock, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
-	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/blocks/%d", blockPresentation.ID), b, routeAdminGetBlock, admin.Access)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/blocks/%d", blockEmbed.ID), b, routeAdminGetBlock, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusNotFound, code, res)
 
@@ -452,7 +452,7 @@ func (suite SuiteTestsBlocksRoutes) TestSimpleBlocksAdminRoutesCRUD() {
 		if t.ID == blockExternal.ID {
 			foundExternal = true
 		}
-		if t.ID == blockPresentation.ID {
+		if t.ID == blockEmbed.ID {
 			foundPresentation = true
 		}
 		if t.ID == blockText.ID {

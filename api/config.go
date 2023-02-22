@@ -12,6 +12,9 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -24,8 +27,10 @@ import (
 var config *apiConfig = nil
 
 const (
-	Yes = "yes"
-	No  = "no"
+	Yes      = "yes"
+	No       = "no"
+	SortASC  = "ASC"
+	SortDESC = "DESC"
 )
 
 type apiConfig struct {
@@ -36,8 +41,11 @@ type apiConfig struct {
 	JWTSigningString string
 	SiteCode         string // needed if the site is pending and a new install
 	APILevel         string // one of all, admin, participant; used to mount routes
-	DBConnection     *sqlx.DB
-	CacheClient      *redis.Client
+
+	DBConnection *sqlx.DB
+	CacheClient  *redis.Client
+	AWSS3Client  *s3.Client
+	AWSS3Bucket  string
 }
 
 // SetupConfig is a call to configure the basic required configuration options for the API
@@ -130,6 +138,23 @@ func SetupConfig() *apiConfig {
 		}
 	}
 	config.CacheClient.FlushAll().Result()
+
+	// S3
+	s3Access := envHelper("KESPLORA_API_S3_ACCESS", "")
+	s3Secret := envHelper("KESPLORA_API_S3_SECRET", "")
+	s3Bucket := envHelper("KESPLORA_API_S3_BUCKET", "")
+	if s3Access != "" && s3Secret != "" && s3Bucket != "" {
+		// configure the client
+		cfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
+			awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s3Access, s3Secret, "")),
+		)
+		if err != nil {
+			fmt.Printf("\n%+v\n", err)
+		} else {
+			config.AWSS3Client = s3.NewFromConfig(cfg)
+			config.AWSS3Bucket = s3Bucket
+		}
+	}
 
 	return config
 }
@@ -316,6 +341,15 @@ func SetupAPI() *chi.Mux {
 			r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
 			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
 
+			// files
+			r.Post("/files", routeAdminUploadFile) // multipart-form
+			r.Get("/files", routeAdminGetFiles)
+			r.Post("/files/{fileID}", routeAdminReplaceFile)
+			r.Delete("/files/{fileID}", routeAdminDeleteFile)
+			r.Patch("/files/{fileID}", routeUpdateFileMetadata)
+			r.Get("/files/{fileID}", routeAdminGetFileMetaData)
+			r.Get("/files/{fileID}/download", routeAdminDownloadFile)
+
 		})
 	}
 
@@ -349,10 +383,21 @@ func SetupAPI() *chi.Mux {
 			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}", routeParticipantGetBlock)
 			r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/status/{status}", routeParticipantSaveBlockStatus)
 
+			// special form routes
+			r.Post("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantSaveFormResponse)
+			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantGetFormSubmissions)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantDeleteSubmissions)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions/{submissionID}", notImplementedRoute)
+
 			// participant's can reset their status
 			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/status", routeParticipantRemoveBlockStatus)
 			r.Delete("/projects/{projectID}/modules/{moduleID}/status", routeParticipantRemoveBlockStatus)
 			r.Delete("/projects/{projectID}/status", routeParticipantRemoveBlockStatus)
+
+			// files
+			r.Get("/files/{fileID}", routeParticipantGetFileMetaData)
+			r.Get("/files/{fileID}/download", routeParticipantDownloadFile)
+
 		})
 	}
 	return r

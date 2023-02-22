@@ -25,7 +25,9 @@ func routeAllUserLogin(w http.ResponseWriter, r *http.Request) {
 	input := loginInput{}
 	render.Bind(r, &input)
 	if input.Login == "" || input.Password == "" {
-		sendAPIError(w, api_error_user_bad_data, nil, map[string]string{})
+		sendAPIError(w, api_error_user_bad_data, nil, map[string]string{
+			"login": input.Login,
+		})
 		return
 	}
 

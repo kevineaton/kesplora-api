@@ -57,7 +57,7 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	encoder.Encode(input)
 	code, res, err = testEndpoint(http.MethodPost, "/admin/projects", b, routeAdminCreateProject, admin.Access)
 	suite.Nil(err)
-	suite.Equal(http.StatusOK, code, res)
+	suite.Equal(http.StatusCreated, code, res)
 	m, err := testEndpointResultToMap(res)
 	suite.Nil(err)
 	created := &Project{}

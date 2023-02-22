@@ -130,8 +130,9 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check the DOB of EITHER the logged in user OR the passed in user that would be created
-	if project.ParticipantMinimumAge > 0 {
+	// check the DOB of EITHER the logged in user OR the passed in user that would be created ONLY IF
+	// the project is not anonymous
+	if project.ParticipantMinimumAge > 0 && project.ParticipantVisibility != "code" {
 		dob := time.Now()
 		if results.User != nil {
 			dob, _ = time.Parse(results.User.DateOfBirth, "2006-01-02")

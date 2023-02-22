@@ -8,6 +8,8 @@ This project sprung out of a doctoral research project that had unique needs. Th
 
 Very early stages. Structs, funcs, flows, and APIs will all change. Do not use this at this time! If you would like to assist, definitely reach out.
 
+**NOTE**: Since the APIs are fluid and quickly changing, test coverage is below acceptable standards for production use. Use at your own risk, especially now!
+
 ## Configuration
 
 Most configuration is handled through the `Config.go` file reading from the environment. Of note, the following values deserve explanation:
@@ -20,10 +22,19 @@ Most configuration is handled through the `Config.go` file reading from the envi
 - `KESPLORA_API_DB_CONNECTION` (`root:password@tcp(localhost:3306)/Kesplora`): The DB connection string. Currently only MySQL is supported.
 - `KESPLORA_API_CACHE_ADDRESS` (`localhost:6379`): The connection string for the Redis server.
 - `KESPLORA_API_CACHE_PASSWORD` (``): The password for the Redis connection.
+- `KESPLORA_API_S3_ACCESS` (``): The S3 access token
+- `KESPLORA_API_S3_SECRET` (``): The S3 secret token
+- `KESPLORA_API_S3_BUCKET` (``): The S3 bucket
 
 ## Set Up
 
 The current architecture is "one DB, one site". Although the `Sites` table has an ID, the current expectation is a single ID for a single site. This site is checked on startup to determine if the site should be set up or not. If the site's `status` field is `pending`, the configuration will output a code that needs to be sent up when configuring the site in order to make it `active`.
+
+To run an instance, you will need to have the following:
+
+- The Docker images or binaries you want to run, configured to speak with each other
+- An AWS IAM with read and write access to an S3 bucket (additional providers coming)
+- A Mailgun account for sending emails (additional providers coming)
 
 For clients, when the app starts up, a configuration code will be output to the terminal. This is not stored anywhere. A call to GET `/site` will fail, but a call to GET `/setup` will state whether the site is already configured. Nothing will be saved in the DB at this point. The client should make a `POST` to `/setup` to configure the site. This is almost exactly like the call to PATCH `/site` but will also configure the user account and additional data as needed.
 

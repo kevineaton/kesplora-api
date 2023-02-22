@@ -63,7 +63,7 @@ CREATE TABLE `Blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
   `summary` varchar(2048) NOT NULL,
-  `blockType` enum('other','survey','presentation', 'text', 'external') NOT NULL DEFAULT 'other',
+  `blockType` enum('other','form','embed', 'text', 'external', 'file') NOT NULL DEFAULT 'other',
   `allowReset` enum('yes', 'no') NOT NULL DEFAULT 'yes',
   PRIMARY KEY (`id`),
   KEY `blockType` (`blockType`)
@@ -82,7 +82,6 @@ DROP TABLE IF EXISTS `BlockForm`;
 CREATE TABLE `BlockForm` (
   `blockId` int(11) NOT NULL,
   `formType` ENUM('survey', 'quiz') NOT NULL DEFAULT 'survey',
-  `allowResubmit` ENUM('yes', 'no') DEFAULT 'yes',
   PRIMARY KEY (`blockId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -90,8 +89,8 @@ DROP TABLE IF EXISTS `BlockFormQuestions`;
 CREATE TABLE `BlockFormQuestions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `blockId` int(11) NOT NULL,
-  `questionType` enum('multiple','single','short','long') DEFAULT NULL,
-  `question` varchar(1024) NOT NULL DEFAULT '',
+  `questionType` enum('explanation', 'multiple','single','short','long', 'likert5', 'likert7') DEFAULT 'explanation',
+  `question` varchar(2048) NOT NULL DEFAULT '',
   `formOrder` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY (`blockId`),
@@ -109,20 +108,30 @@ CREATE TABLE `BlockFormQuestionOptions` (
   KEY (`questionId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
-DROP TABLE IF EXISTS `BlockFormQuestionResponses`;
-CREATE TABLE `BlockFormQuestionResponses` (
+DROP TABLE IF EXISTS `BlockFormSubmissions`;
+CREATE TABLE `BlockFormSubmissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `blockId` int(11) NOT NULL,
-  `questionId` int(11) NOT NULL,
   `userId` int(11) NOT NULL,
-  `optionId` int(11) NOT NULL,
   `submitted` datetime NOT NULL,
-  `textResponse` varchar(2048) NOT NULL default '',
+  `results` enum('na', 'needs_input', 'passed', 'failed'),
   PRIMARY KEY (`id`),
-  KEY (`optionId`),
-  KEY (`questionId`),
+  KEY (`blockId`),
   KEY (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockFormSubmissionResponses`;
+CREATE TABLE `BlockFormSubmissionResponses` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `submissionId` int(11) NOT NULL,
+  `questionId` int(11) NOT NULL,
+  `optionId` int(11) NOT NULL,
+  `textResponse` varchar(2048) NOT NULL default '',
+  `isCorrect` enum('na', 'pending', 'yes', 'no'),
+  PRIMARY KEY (`id`),
+  KEY (`submissionId`),
+  KEY (`optionId`),
+  KEY (`questionId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -161,8 +170,8 @@ DROP TABLE IF EXISTS `ConsentForms`;
 CREATE TABLE `ConsentForms` (
   `projectId` int(11) NOT NULL,
   `contentInMarkdown` text NOT NULL,
-  `contactInformationDisplay` varchar(512) NOT NULL DEFAULT '',
-  `institutionInformationDisplay` varchar(512) NOT NULL DEFAULT '',
+  `contactInformationDisplay` varchar(2048) NOT NULL DEFAULT '',
+  `institutionInformationDisplay` varchar(2048) NOT NULL DEFAULT '',
   PRIMARY KEY (`projectId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -207,14 +216,34 @@ CREATE TABLE `BlockExternal` (
   PRIMARY KEY (`blockId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS `BlockPresentation`;
-CREATE TABLE `BlockPresentation` (
+DROP TABLE IF EXISTS `BlockEmbed`;
+CREATE TABLE `BlockEmbed` (
   `blockId` int(11) NOT NULL,
-  `presentationType` enum('youtube','pdf') NOT NULL DEFAULT 'pdf',
+  `embedType` enum('youtube','external_pdf', 'internal_pdf') NOT NULL DEFAULT 'external_pdf',
   `embedLink` varchar(2048) NOT NULL,
+  `fileId` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`blockId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS `BlockSurvey`;
-DROP TABLE IF EXISTS `BlockSurveyQuestion`;
-DROP TABLE IF EXISTS `BlockSurveyQuestionOptions`;
+DROP TABLE IF EXISTS `Files`;
+CREATE TABLE `Files` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `remoteKey` varchar(512) NOT NULL DEFAULT '',
+  `display` varchar(512) NOT NULL DEFAULT '',
+  `description` varchar(2048) NOT NULL DEFAULT '',
+  `fileType` varchar(32) NOT NULL DEFAULT '',
+  `uploadedOn` datetime NOT NULL DEFAULT current_timestamp(),
+  `uploadedBy` int(11) NOT NULL DEFAULT 0,
+  `visibility` enum('admin', 'users', 'project','public') NOT NULL DEFAULT 'admin',
+  `fileSize` int(11) NOT NULL DEFAULT 0,
+  `locationSource` enum('other', 'aws') NOT NULL DEFAULT 'other',
+  PRIMARY KEY (`id`),
+  KEY `visibility` (`visibility`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `BlockFile`;
+CREATE TABLE `BlockFile` (
+  `blockId` int(11) NOT NULL,
+  `fileId` int(11) NOT NULL,
+  PRIMARY KEY (`blockId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
