@@ -45,6 +45,17 @@ func routeParticipantGetBlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	block.Content = content
+
+	if block.UserStatus == BlockUserStatusNotStarted {
+		SaveBlockUserStatusForParticipant(&BlockUserStatus{
+			UserID:     user.ID,
+			ProjectID:  projectID,
+			ModuleID:   moduleID,
+			BlockID:    blockID,
+			UserStatus: BlockUserStatusStarted,
+		})
+		block.UserStatus = BlockUserStatusStarted
+	}
 	sendAPIJSONData(w, http.StatusOK, block)
 }
 
@@ -78,13 +89,17 @@ func routeParticipantSaveBlockStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// make sure this project/module/block/user combo is valid
-	_, err = GetModuleBlockForParticipant(user.ID, projectID, moduleID, blockID)
+	block, err := GetModuleBlockForParticipant(user.ID, projectID, moduleID, blockID)
 	if err != nil {
 		sendAPIError(w, api_error_block_not_found, err, map[string]interface{}{})
 		return
 	}
 
 	// TODO: if block is a form, they can't use this endpoint
+	if block.BlockType == BlockTypeForm {
+		sendAPIError(w, api_error_block_status_form, errors.New("incorrect path"), map[string]interface{}{})
+		return
+	}
 
 	input := &BlockUserStatus{
 		UserID:        user.ID,
@@ -98,6 +113,20 @@ func routeParticipantSaveBlockStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sendAPIError(w, api_error_block_status_save_err, err, map[string]interface{}{})
 		return
+	}
+
+	projectStatus, err := CheckProjectParticipantStatusForParticipant(user.ID, projectID)
+	if err == nil {
+		// update the user status
+		err = UpdateUserAndProjectStatus(user.ID, projectID, projectStatus)
+		if err != nil {
+			if projectStatus == BlockUserStatusCompleted {
+				// set the complete message
+				project, _ := GetProjectByID(projectID)
+				input.ProjectUserStatus = projectStatus
+				input.ProjectCompleteMessage = project.CompleteMessage
+			}
+		}
 	}
 
 	sendAPIJSONData(w, http.StatusOK, input)
@@ -125,9 +154,9 @@ func routeParticipantRemoveBlockStatus(w http.ResponseWriter, r *http.Request) {
 	if blockID != 0 {
 		err = RemoveAllProgressForParticipantAndBlock(user.ID, blockID)
 	} else if moduleID != 0 {
-		err = RemoveAllProgressForParticipantAndModule(user.ID, blockID)
+		err = RemoveAllProgressForParticipantAndModule(user.ID, moduleID)
 	} else if projectID != 0 {
-		err = RemoveAllProgressForParticipantAndFlow(user.ID, blockID)
+		err = RemoveAllProgressForParticipantAndFlow(user.ID, projectID)
 	}
 
 	if err != nil {
@@ -192,7 +221,6 @@ func routeParticipantSaveFormResponse(w http.ResponseWriter, r *http.Request) {
 	}
 	err = CreateBlockFormSubmission(submission)
 	if err != nil {
-		fmt.Printf("\n%+v\n", err)
 		// TODO: replace with better error
 		sendAPIError(w, api_error_block_not_found, err, map[string]interface{}{})
 		return
@@ -223,7 +251,6 @@ func routeParticipantSaveFormResponse(w http.ResponseWriter, r *http.Request) {
 				} else if form.FormType == BlockFormTypeQuiz {
 					insert.IsCorrect = BlockFormSubmissionResponseIsCorrectPending
 				}
-				fmt.Printf("Inserting\t%+v\n", insert)
 				err = CreateBlockFormSubmissionResponse(insert)
 				if err != nil {
 					fmt.Printf("\nErr on response: %+v\n%+v\n", err, insert)

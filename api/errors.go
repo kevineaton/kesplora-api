@@ -94,6 +94,7 @@ const (
 	api_error_block_delete_err           = "api_error_block_delete_err"
 
 	api_error_block_status_save_err = "api_error_block_status_save_err"
+	api_error_block_status_form     = "api_error_block_status_form"
 
 	// file errors
 	api_error_file_upload_no_provider   = "api_error_file_upload_no_provider"
@@ -349,6 +350,10 @@ var apiErrors = map[string]apiError{
 	api_error_block_status_save_err: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save that status",
+	},
+	api_error_block_status_form: {
+		Code:    http.StatusBadRequest,
+		Message: "to save a form, you have to call the /submissions path, not the /status path",
 	},
 
 	// files

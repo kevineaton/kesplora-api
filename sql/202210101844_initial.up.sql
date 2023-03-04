@@ -20,17 +20,23 @@ CREATE TABLE `Projects` (
   `shortCode` varchar(16) NOT NULL DEFAULT '',
   `shortDescription` varchar(1024) NOT NULL DEFAULT '',
   `description` text NOT NULL,
-  `status` enum('pending','active','disabled', 'completed') NOT NULL DEFAULT 'pending',
+  `status` enum('pending','active','disabled','completed') NOT NULL DEFAULT 'pending',
   `showStatus` enum('site','direct','no') NOT NULL DEFAULT 'site',
   `signupStatus` enum('open','with_code','closed') NOT NULL DEFAULT 'open',
   `maxParticipants` int(6) NOT NULL DEFAULT 0,
   `participantVisibility` enum('code','email','full') NOT NULL DEFAULT 'code',
   `participantMinimumAge` int(3) NOT NULL DEFAULT 0,
   `connectParticipantToConsentForm` enum('yes','no') NOT NULL DEFAULT 'yes',
+  `completeMessage` varchar(5096) NOT NULL DEFAULT '',
+  `flowRule` enum('free','in_order_in_module','in_order_for_project') NOT NULL DEFAULT 'free',
+  `completeRule` enum('continued_access','blocked') NOT NULL DEFAULT 'continued_access',
+  `startRule` enum('any','date','threshold') NOT NULL DEFAULT 'any',
+  `startDate` datetime NOT NULL,
+  `endDate` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `siteId` (`siteId`),
   KEY `status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
 
 
 DROP TABLE IF EXISTS `ProjectUserLinks`;

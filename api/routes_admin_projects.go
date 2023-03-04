@@ -107,6 +107,24 @@ func routeAdminUpdateProject(w http.ResponseWriter, r *http.Request) {
 	if input.ConnectParticipantToConsentForm != found.ConnectParticipantToConsentForm {
 		found.ConnectParticipantToConsentForm = input.ConnectParticipantToConsentForm
 	}
+	if input.CompleteMessage != found.CompleteMessage {
+		found.CompleteMessage = input.CompleteMessage
+	}
+	if input.CompleteRule != found.CompleteRule {
+		found.CompleteRule = input.CompleteRule
+	}
+	if input.FlowRule != found.FlowRule {
+		found.FlowRule = input.FlowRule
+	}
+	if input.StartRule != found.StartRule {
+		found.StartRule = input.StartRule
+	}
+	if input.StartDate != found.StartDate {
+		found.StartDate = input.StartDate
+	}
+	if input.EndDate != found.EndDate {
+		found.EndDate = input.EndDate
+	}
 
 	err = UpdateProject(found)
 	if err != nil {

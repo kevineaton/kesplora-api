@@ -192,8 +192,12 @@ func TestUpdateSiteRoute(t *testing.T) {
 
 	// now update the site
 	updateInfo := &Site{
-		Name:      "An Updated Test",
-		ShortName: "test-test",
+		Name:                 "An Updated Test",
+		ShortName:            "test-test",
+		Description:          "Updated Description",
+		Domain:               "test.kesplora.com",
+		ProjectListOptions:   SiteProjectListOptionsActive,
+		SiteTechnicalContact: "updated@kesplora.com",
 	}
 	b.Reset()
 	encoder.Encode(updateInfo)
@@ -220,4 +224,8 @@ func TestUpdateSiteRoute(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, updateInfo.Name, foundSite.Name)
 	assert.Equal(t, updateInfo.ShortName, foundSite.ShortName)
+	assert.Equal(t, updateInfo.Description, foundSite.Description)
+	assert.Equal(t, updateInfo.Domain, foundSite.Domain)
+	assert.Equal(t, updateInfo.ProjectListOptions, foundSite.ProjectListOptions)
+	assert.Equal(t, updateInfo.SiteTechnicalContact, foundSite.SiteTechnicalContact)
 }

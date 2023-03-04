@@ -110,6 +110,7 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 	input := &ConsentResponse{}
 	render.Bind(r, input)
 	input.ProjectID = projectID
+	input.ResearcherComments = "" // they can't set this
 
 	// first, make sure the project can even be signed up for
 	if project.SignupStatus == ProjectSignupStatusClosed {
@@ -192,7 +193,7 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 	if results.User == nil {
 		// the user isn't logged in, so we will create a new account
 		if input.User == nil {
-			sendAPIError(w, api_error_consent_response_participant_save_err, errors.New("user information must be provided"), map[string]interface{}{
+			sendAPIError(w, api_error_consent_response_participant_save_err, errors.New("user information must be provided; if this is a project that is anonymous, just pass in a password for the user"), map[string]interface{}{
 				"input": input,
 			})
 			return

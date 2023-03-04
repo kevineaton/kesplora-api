@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -29,7 +28,6 @@ func routeAdminUploadFile(w http.ResponseWriter, r *http.Request) {
 
 	file, headers, err := r.FormFile("file")
 	if err != nil {
-		fmt.Printf("\n%+v\n%+v\n\n", headers, err)
 		sendAPIError(w, api_error_file_upload_parse_form, err, nil)
 		return
 	}

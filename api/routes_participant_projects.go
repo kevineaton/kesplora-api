@@ -46,7 +46,7 @@ func routeParticipantGetProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found, err := GetProjectByID(projectID)
+	found, err := GetProjectForParticipantByID(user.ID, projectID)
 	if err != nil {
 		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
 		return
@@ -57,6 +57,7 @@ func routeParticipantGetProject(w http.ResponseWriter, r *http.Request) {
 		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
 		return
 	}
+
 	available := convertProjectToUserRet(found)
 	sendAPIJSONData(w, http.StatusOK, available)
 }

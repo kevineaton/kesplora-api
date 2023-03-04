@@ -50,8 +50,11 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	suite.Equal(http.StatusBadRequest, code, res)
 
 	input := &Project{
-		Name:        "Test Project",
-		Description: "# Project\n\n- Cool\n- Awesome\n",
+		Name:            "Test Project",
+		Description:     "# Project\n\n- Cool\n- Awesome\n",
+		SignupStatus:    ProjectSignupStatusWithCode,
+		CompleteMessage: "You did it!",
+		StartRule:       ProjectStartRuleAny,
 	}
 	b.Reset()
 	encoder.Encode(input)
@@ -69,6 +72,9 @@ func (suite SuiteTestsProjectRoutes) TestProjectRoutesCRUD() {
 	suite.Equal("test_project", created.ShortCode)
 	suite.Equal(input.Description, created.ShortDescription)
 	suite.Equal(ProjectStatusPending, created.Status)
+	suite.Equal(ProjectSignupStatusWithCode, created.SignupStatus)
+	suite.Equal(ProjectStartRuleAny, created.StartRule)
+	suite.Equal(input.CompleteMessage, created.CompleteMessage)
 	defer DeleteProject(created.ID)
 
 	// get all projects for the site

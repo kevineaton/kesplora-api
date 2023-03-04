@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"time"
 )
@@ -35,6 +36,10 @@ type BlockUserStatus struct {
 	BlockID       int64  `json:"blockId" db:"blockId"`
 	UserStatus    string `json:"userStatus" db:"userStatus"`
 	LastUpdatedOn string `json:"lastUpdatedOn" db:"lastUpdatedOn"`
+
+	// these are needed for the save
+	ProjectUserStatus      string `json:"projectUserStatus,omitempty" db:"projectUserStatus"`
+	ProjectCompleteMessage string `json:"projectCompleteMessage,omitempty" db:"projectCompleteMessage"`
 }
 
 // GetProjectFlowForParticipant gets the entire flow for a project for a participant to lay out the
@@ -55,6 +60,8 @@ func GetProjectFlowForParticipant(participantID, projectID int64) ([]Flow, error
 	bmf.blockId = b.id
 	ORDER BY f.flowOrder, bmf.flowOrder`, participantID, projectID)
 	for i := range flow {
+		flow[i].ProjectID = projectID
+		flow[i].UserID = participantID
 		flow[i].processForAPI()
 	}
 	return flow, err
@@ -76,20 +83,56 @@ func SaveBlockUserStatusForParticipant(input *BlockUserStatus) error {
 
 // RemoveAllProgressForParticipantAndFlow removes all progress saved for a user in a project flow
 func RemoveAllProgressForParticipantAndFlow(participantID, projectID int64) error {
-	_, err := config.DBConnection.Exec(`DELETE FROM BlockUserStatus WHERE participantId = ? AND projectId = ?`, participantID, projectID)
+	_, err := config.DBConnection.Exec(`DELETE FROM BlockUserStatus WHERE userId = ? AND projectId = ?`, participantID, projectID)
 	return err
 }
 
 // RemoveAllProgressForParticipantAndModule removes a participant's progress in a module
 func RemoveAllProgressForParticipantAndModule(participantID, moduleID int64) error {
-	_, err := config.DBConnection.Exec(`DELETE FROM BlockUserStatus WHERE participantId = ? AND moduleId = ?`, participantID, moduleID)
+	_, err := config.DBConnection.Exec(`DELETE FROM BlockUserStatus WHERE userId = ? AND moduleId = ?`, participantID, moduleID)
 	return err
 }
 
 // RemoveAllProgressForParticipantAndBlock removes a participant's progress in a block
 func RemoveAllProgressForParticipantAndBlock(participantID, blockID int64) error {
-	_, err := config.DBConnection.Exec(`DELETE FROM BlockUserStatus WHERE participantId = ? AND blockId = ?`, participantID, blockID)
+	_, err := config.DBConnection.Exec(`DELETE FROM BlockUserStatus WHERE userId = ? AND blockId = ?`, participantID, blockID)
 	return err
+}
+
+// CheckProjectParticipantStatusForParticipant checks the participant's status in a project
+func CheckProjectParticipantStatusForParticipant(participantID, projectID int64) (string, error) {
+	// if the user isn't even in the project, return an error
+	if !IsUserInProject(participantID, projectID) {
+		return "", errors.New("participant is not in project")
+	}
+
+	// get the modules/blocks and status for each
+	modules, err := GetProjectFlowForParticipant(participantID, projectID)
+	if err != nil {
+		return "", err
+	}
+
+	// if any aren't not_started, it's at least started
+	// if they are all complete, they are complete
+	status := BlockUserStatusNotStarted
+	allComplete := true
+	for i := range modules {
+		if modules[i].UserStatus != BlockUserStatusNotStarted {
+			status = BlockUserStatusStarted
+			if modules[i].UserStatus != BlockUserStatusCompleted {
+				allComplete = false
+			}
+		}
+		// we can short circuit here IF we found a module that has been started and
+		// also found a module that isn't complete
+		if !allComplete && status != BlockUserStatusNotStarted {
+			break
+		}
+	}
+	if allComplete {
+		status = BlockUserStatusCompleted
+	}
+	return status, nil
 }
 
 func (input *Flow) processForAPI() {
