@@ -30,7 +30,7 @@ type File struct {
 	UploadedOn     string `json:"uploadedOn" db:"uploadedOn"`
 	UploadedBy     int64  `json:"uploadedBy" db:"uploadedBy"`
 	Visibility     string `json:"visibility" db:"visibility"`
-	Filesize       int64  `json:"fileSize" db:"fileSize"`
+	FileSize       int64  `json:"fileSize" db:"fileSize"`
 	LocationSource string `json:"locationSource" db:"locationSource"`
 }
 

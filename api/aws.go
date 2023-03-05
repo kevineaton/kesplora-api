@@ -19,7 +19,7 @@ func checkAWSConfig() error {
 }
 
 // ListFilesInBucket will list the files in the bucket. Note that this isn't the
-// ideal way to list lal files for the account, as the files should be handled
+// ideal way to list all files for the account, as the files should be handled
 // in the db
 func ListFilesInBucket() ([]types.Object, error) {
 	out := []types.Object{}

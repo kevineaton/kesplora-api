@@ -242,30 +242,30 @@ func HandleSaveBlockForm(content *BlockForm) error {
 	// through the options; if the id is 0, if create; if not
 	// update
 	errors := []error{}
-	for _, question := range content.Questions {
+	for i := range content.Questions {
 		// update or create
-		question.BlockID = content.BlockID
-		if question.ID == 0 {
-			err := CreateBlockFormQuestion(&question)
+		content.Questions[i].BlockID = content.BlockID
+		if content.Questions[i].ID == 0 {
+			err := CreateBlockFormQuestion(&content.Questions[i])
 			if err != nil {
 				errors = append(errors, err)
 			}
 		} else {
-			err := UpdateBlockFormQuestion(&question)
+			err := UpdateBlockFormQuestion(&content.Questions[i])
 			if err != nil {
 				errors = append(errors, err)
 			}
 		}
 		// now handle the options
-		for _, option := range question.Options {
-			option.QuestionID = question.ID
-			if option.ID == 0 {
-				err := CreateBlockFormQuestionOption(&option)
+		for j := range content.Questions[i].Options {
+			content.Questions[i].Options[j].QuestionID = content.Questions[i].ID
+			if content.Questions[i].Options[j].ID == 0 {
+				err := CreateBlockFormQuestionOption(&content.Questions[i].Options[j])
 				if err != nil {
 					errors = append(errors, err)
 				}
 			} else {
-				err := UpdateBlockFormQuestionOption(&option)
+				err := UpdateBlockFormQuestionOption(&content.Questions[i].Options[j])
 				if err != nil {
 					errors = append(errors, err)
 				}
@@ -400,35 +400,6 @@ func GetBlockFormSubmissionResponsesForSubmission(submissionID int64) ([]BlockFo
 func DeleteBlockFormSubmissionResponses(submissionID int64) error {
 	_, err := config.DBConnection.Exec(`DELETE FROM BlockFormSubmissionResponses WHERE submissionId = ?`, submissionID)
 	return err
-}
-
-//
-// Binds
-//
-
-// Bind binds the data for the HTTP
-func (data *BlockForm) Bind(r *http.Request) error {
-	return nil
-}
-
-// Bind binds the data for the HTTP
-func (data *BlockFormQuestion) Bind(r *http.Request) error {
-	return nil
-}
-
-// Bind binds the data for the HTTP
-func (data *BlockFormQuestionOption) Bind(r *http.Request) error {
-	return nil
-}
-
-// Bind binds the data for the HTTP
-func (data *BlockFormSubmission) Bind(r *http.Request) error {
-	return nil
-}
-
-// Bind binds the data for the HTTP
-func (data *BlockFormSubmissionResponse) Bind(r *http.Request) error {
-	return nil
 }
 
 // Bind binds the data for the HTTP

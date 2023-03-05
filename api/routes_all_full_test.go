@@ -368,7 +368,7 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 					},
 				},
 				{
-					Question:     "Whatdo you like?",
+					Question:     "What do you like?",
 					QuestionType: BlockFormQuestionTypeMultiple,
 					FormOrder:    4,
 					Options: []BlockFormQuestionOption{
@@ -417,6 +417,35 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 	foundParticipantBlockInModule[createdModule3.ID][createdModule3FormBlock.ID] = false
+
+	// test the update of the form
+	questions := createdModule3FormBlockForm.Questions
+	questions = append(questions, BlockFormQuestion{
+		Question:     "What else do you like?",
+		QuestionType: BlockFormQuestionTypeMultiple,
+		FormOrder:    5,
+		Options: []BlockFormQuestionOption{
+			{
+				OptionText: "Dogs",
+			},
+			{
+				OptionText: "Cats",
+			},
+			{
+				OptionText: "Platypodes",
+			},
+		},
+	})
+	questions[2].Options[1].OptionText = "24?"
+	b.Reset()
+	encoder.Encode(&Block{
+		Content: BlockForm{
+			Questions: questions,
+		},
+	})
+	code, res, err = testEndpoint(http.MethodPatch, fmt.Sprintf("/admin/blocks/%d", createdModule3FormBlock.ID), b, routeAdminUpdateBlock, admin.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, code, res)
 
 	// module 3 text block 1
 	module3TextBlock1Input := &Block{
@@ -750,7 +779,7 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 			suite.Nil(err)
 			err = json.Unmarshal(unmB, currentQuestions)
 			suite.Nil(err)
-			suite.Equal(4, len(currentQuestions.Questions))
+			suite.Equal(5, len(currentQuestions.Questions))
 			responses := []BlockFormSubmissionResponse{}
 			for _, q := range currentQuestions.Questions {
 				response := BlockFormSubmissionResponse{
@@ -792,7 +821,7 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 			err = mapstructure.Decode(mS, &foundSubmissions)
 			suite.Nil(err)
 			require.Equal(1, len(foundSubmissions))
-			suite.Equal(4, len(foundSubmissions[0].Responses))
+			suite.Equal(5, len(foundSubmissions[0].Responses))
 
 			// yes, loops in loops are generally not great, but it's a test and limited data
 			for _, originalResponse := range responses {
@@ -802,6 +831,34 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 					}
 				}
 			}
+
+			// delete the form submission
+			code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/participant/projects/%d/modules/%d/blocks/%d/submissions", createdProject.ID, f.ModuleID, f.BlockID), b, routeParticipantDeleteSubmissions, part.Access)
+			suite.Nil(err)
+			suite.Equal(http.StatusOK, code, res)
+
+			// get it, it should be gone
+			code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/participant/projects/%d/modules/%d/blocks/%d/submissions", createdProject.ID, f.ModuleID, f.BlockID), b, routeParticipantGetFormSubmissions, part.Access)
+			suite.Nil(err)
+			suite.Equal(http.StatusOK, code, res)
+			mS, err = testEndpointResultToSlice(res)
+			suite.Nil(err)
+			suite.Zero(len(mS))
+
+			// resubmit just for safety
+			b.Reset()
+			encoder.Encode(send)
+			code, res, err = testEndpoint(http.MethodPost, fmt.Sprintf("/participant/projects/%d/modules/%d/blocks/%d/submissions", createdProject.ID, f.ModuleID, f.BlockID), b, routeParticipantSaveFormResponse, part.Access)
+			suite.Nil(err)
+			suite.Equal(http.StatusOK, code, res)
+
+			code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/participant/projects/%d/modules/%d/blocks/%d/submissions", createdProject.ID, f.ModuleID, f.BlockID), b, routeParticipantGetFormSubmissions, part.Access)
+			suite.Nil(err)
+			suite.Equal(http.StatusOK, code, res)
+			mS, err = testEndpointResultToSlice(res)
+			suite.Nil(err)
+			suite.NotZero(len(mS))
+
 		}
 
 		// set in map
@@ -925,6 +982,16 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 
 	// admin removes a module from the flow
 	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/admin/projects/%d/modules/%d", createdProject.ID, createdModule1.ID), b, routeAdminUnlinkModuleAndProject, admin.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, code, res)
+
+	// admin deletes all blocks in a module
+	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/admin/modules/%d/blocks", createdModule1.ID), b, routeAdminUnlinkAllBlocksFromModule, admin.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, code, res)
+
+	// admin unlinks all modules from a project
+	code, res, err = testEndpoint(http.MethodDelete, fmt.Sprintf("/admin/projects/%d/flow", createdProject.ID), b, routeAdminUnlinkAllModulesFromProject, admin.Access)
 	suite.Nil(err)
 	suite.Equal(http.StatusOK, code, res)
 

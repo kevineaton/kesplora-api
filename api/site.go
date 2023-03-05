@@ -128,6 +128,20 @@ func UpdateSite(input *Site) error {
 	return err
 }
 
+// DeleteSiteByID deletes a site. WARNING: Think REALLY HARD before calling this, as the ramifications could be...
+// difficult. It would be better to just drop the database if you are intentionally trying to delete a site and
+// its data
+func DeleteSiteByID(siteID int64) error {
+	// this is incredibly dangerous and should only be used in tests
+	// especially since we don't clean up any modules or anything
+	_, err := config.DBConnection.Exec("DELETE FROM Site WHERE id = ?", siteID)
+	if err != nil {
+		return err
+	}
+	_, err = config.CacheClient.Del(getSiteCacheKey()).Result()
+	return err
+}
+
 func getSiteCacheKey() string {
 	return "site" // putting this as a func in case we want to cache on the id for separation in the future
 }

@@ -49,7 +49,7 @@ func routeAdminUploadFile(w http.ResponseWriter, r *http.Request) {
 		RemoteKey:      headers.Filename,
 		Display:        headers.Filename,
 		UploadedBy:     admin.ID,
-		Filesize:       headers.Size,
+		FileSize:       headers.Size,
 		FileType:       filepath.Ext(headers.Filename),
 		Visibility:     FileVisibilityAdmin,
 		LocationSource: FileLocationSourceAWS,
@@ -139,7 +139,7 @@ func routeAdminReplaceFile(w http.ResponseWriter, r *http.Request) {
 		RemoteKey:  key,
 		Display:    headers.Filename,
 		UploadedBy: admin.ID,
-		Filesize:   headers.Size,
+		FileSize:   headers.Size,
 		FileType:   filepath.Ext(headers.Filename),
 	}
 	err = UpdateFileInDB(fileInput)
@@ -193,6 +193,8 @@ func routeAdminDeleteFile(w http.ResponseWriter, r *http.Request) {
 		sendAPIError(w, api_error_file_no_exist, err, nil)
 		return
 	}
+
+	// TODO: if this belongs to a module, error out as a conflict
 
 	// first delete from bucket
 	err = DeleteFileFromBucket(file.RemoteKey)

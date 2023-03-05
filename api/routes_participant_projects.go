@@ -10,12 +10,7 @@ import (
 
 // routeParticipantGetProjects gets all projects on a site for a participant
 func routeParticipantGetProjects(w http.ResponseWriter, r *http.Request) {
-	user, err := getUserFromHTTPContext(r)
-	if err != nil || user == nil {
-		// this should not have happened
-		sendAPIError(w, api_error_auth_missing, errors.New("missing user"), nil)
-		return
-	}
+	user, _ := getUserFromHTTPContext(r) // can't get here without a user
 
 	found, err := GetProjectsForParticipant(user.ID)
 	if err != nil {
@@ -33,12 +28,7 @@ func routeParticipantGetProjects(w http.ResponseWriter, r *http.Request) {
 // routeParticipantGetProject gets the project information for a single project that
 // a participant is connected to
 func routeParticipantGetProject(w http.ResponseWriter, r *http.Request) {
-	user, err := getUserFromHTTPContext(r)
-	if err != nil || user == nil {
-		// this should not have happened
-		sendAPIError(w, api_error_auth_missing, errors.New("missing user"), nil)
-		return
-	}
+	user, _ := getUserFromHTTPContext(r) // can't get here without a user
 
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	if projectIDErr != nil {
@@ -64,12 +54,7 @@ func routeParticipantGetProject(w http.ResponseWriter, r *http.Request) {
 
 // routeParticipantGetProjectFlow gets the user's flow for a project
 func routeParticipantGetProjectFlow(w http.ResponseWriter, r *http.Request) {
-	user, err := getUserFromHTTPContext(r)
-	if err != nil || user == nil {
-		// this should not have happened
-		sendAPIError(w, api_error_auth_missing, errors.New("missing user"), nil)
-		return
-	}
+	user, _ := getUserFromHTTPContext(r) // can't get here without a user
 
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	if projectIDErr != nil {
@@ -77,7 +62,7 @@ func routeParticipantGetProjectFlow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = GetProjectByID(projectID)
+	_, err := GetProjectByID(projectID)
 	if err != nil {
 		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
 		return
@@ -99,12 +84,7 @@ func routeParticipantGetProjectFlow(w http.ResponseWriter, r *http.Request) {
 
 // routeParticipantUnlinkUserAndProject unlinks a user to a project
 func routeParticipantUnlinkUserAndProject(w http.ResponseWriter, r *http.Request) {
-	user, err := getUserFromHTTPContext(r)
-	if err != nil || user == nil {
-		// this should not have happened
-		sendAPIError(w, api_error_auth_missing, errors.New("missing user"), nil)
-		return
-	}
+	user, _ := getUserFromHTTPContext(r) // can't get here without a user
 
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	if projectIDErr != nil {

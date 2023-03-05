@@ -68,4 +68,7 @@ func Log(level string, key, message string, options *LogOptions) {
 	default:
 		log.Warn(logOut)
 	}
+
+	// TODO: if we ever integrate with an external logger, if the key is a test key,
+	// bail out before
 }

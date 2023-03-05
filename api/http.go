@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -185,6 +186,7 @@ func getUserFromHTTPContext(r *http.Request) (*jwtUser, error) {
 	return &user, nil
 }
 
+// testEndpoint calls a route in the API for testing purposes
 func testEndpoint(method string, endpoint string, data io.Reader, handler http.HandlerFunc, accessToken string) (code int, body *bytes.Buffer, err error) {
 	req, err := http.NewRequest(method, endpoint, data)
 	if err != nil {
@@ -199,6 +201,27 @@ func testEndpoint(method string, endpoint string, data io.Reader, handler http.H
 	return rr.Code, rr.Body, nil
 }
 
+func testEndpointUpload(endpoint string, fileName string, data io.Reader, handler http.HandlerFunc, accessToken string) (code int, body *bytes.Buffer, err error) {
+	b := &bytes.Buffer{}
+	writer := multipart.NewWriter(b)
+	part, _ := writer.CreateFormFile("file", fileName)
+	io.Copy(part, data)
+	writer.Close()
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, b)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	req.Header.Add("Authorization", "Bearer: "+accessToken)
+	rr := httptest.NewRecorder()
+	chi := SetupAPI()
+	chi.ServeHTTP(rr, req)
+	return rr.Code, rr.Body, nil
+}
+
+// testEndpointResultToMap converts the buffer from testEndpoint to a map which can then be converted into a struct if needed
 func testEndpointResultToMap(bu *bytes.Buffer) (map[string]interface{}, error) {
 	m := map[string]interface{}{}
 	err := json.Unmarshal(bu.Bytes(), &m)
@@ -206,6 +229,7 @@ func testEndpointResultToMap(bu *bytes.Buffer) (map[string]interface{}, error) {
 	return mm, err
 }
 
+// testEndpointResultToSlice converts the buffer from testEndpoint to a slice of maps which can then be converted into a struct if needed
 func testEndpointResultToSlice(bu *bytes.Buffer) ([]interface{}, error) {
 	m := map[string]interface{}{}
 	err := json.Unmarshal(bu.Bytes(), &m)
