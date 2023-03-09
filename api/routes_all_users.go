@@ -188,7 +188,7 @@ func routeAllUserRefreshAccess(w http.ResponseWriter, r *http.Request) {
 	foundToken.ExpiresOn = time.Now().Add(tokenExpiresMinutesRefresh * time.Minute).Format(timeFormatDB)
 	err = saveTokenForUser(foundToken)
 	if err != nil {
-		sendAPIError(w, api_error_auth_save_err, err, map[string]string{})
+		sendAPIError(w, api_error_auth_save, err, map[string]string{})
 		return
 	}
 

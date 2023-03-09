@@ -40,7 +40,7 @@ func routeAdminCreateBlock(w http.ResponseWriter, r *http.Request) {
 
 	err = CreateBlock(input)
 	if err != nil {
-		sendAPIError(w, api_error_block_save_error, err, map[string]interface{}{
+		sendAPIError(w, api_error_block_save, err, map[string]interface{}{
 			"input": input,
 		})
 		return
@@ -49,7 +49,7 @@ func routeAdminCreateBlock(w http.ResponseWriter, r *http.Request) {
 	// now, hand off the save depending on the body of the content
 	data, err := handleBlockSave(blockType, input.ID, input.Content)
 	if err != nil {
-		sendAPIError(w, api_error_block_save_error, err, map[string]interface{}{
+		sendAPIError(w, api_error_block_save, err, map[string]interface{}{
 			"input": input,
 		})
 		return
@@ -160,7 +160,7 @@ func routeAdminUpdateBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	err = UpdateBlock(block)
 	if err != nil {
-		sendAPIError(w, api_error_block_save_error, err, map[string]interface{}{
+		sendAPIError(w, api_error_block_save, err, map[string]interface{}{
 			"input": input,
 		})
 		return
@@ -169,7 +169,7 @@ func routeAdminUpdateBlock(w http.ResponseWriter, r *http.Request) {
 	if input.Content != nil {
 		content, err := handleBlockSave(block.BlockType, block.ID, input.Content)
 		if err != nil {
-			sendAPIError(w, api_error_block_save_error, err, map[string]interface{}{
+			sendAPIError(w, api_error_block_save, err, map[string]interface{}{
 				"input": input,
 			})
 			return
@@ -194,12 +194,12 @@ func routeAdminDeleteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	err = handleBlockDelete(block.BlockType, blockID)
 	if err != nil {
-		sendAPIError(w, api_error_block_delete_err, err, map[string]string{})
+		sendAPIError(w, api_error_block_delete, err, map[string]string{})
 		return
 	}
 	err = DeleteBlock(blockID)
 	if err != nil {
-		sendAPIError(w, api_error_block_delete_err, err, map[string]string{})
+		sendAPIError(w, api_error_block_delete, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{
@@ -231,7 +231,7 @@ func routeAdminLinkBlockAndModule(w http.ResponseWriter, r *http.Request) {
 
 	err = LinkBlockAndModule(moduleID, blockID, order)
 	if err != nil {
-		sendAPIError(w, api_error_block_link_err, err, map[string]int64{
+		sendAPIError(w, api_error_block_link, err, map[string]int64{
 			"moduleID": moduleID,
 			"blockID":  blockID,
 			"order":    order,
@@ -254,7 +254,7 @@ func routeAdminUnlinkBlockAndModule(w http.ResponseWriter, r *http.Request) {
 
 	err := UnlinkBlockAndModule(moduleID, blockID)
 	if err != nil {
-		sendAPIError(w, api_error_block_unlink_err, err, map[string]int64{
+		sendAPIError(w, api_error_block_unlink, err, map[string]int64{
 			"moduleID": moduleID,
 			"blockID":  blockID,
 		})

@@ -32,11 +32,11 @@ func routeParticipantGetConsentResponse(w http.ResponseWriter, r *http.Request) 
 	// if the user, make sure it is their's, but it's hard when it's anonymous though
 	response, err := GetConsentResponseByID(responseID)
 	if err != nil {
-		sendAPIError(w, api_error_consent_response_get_err, err, nil)
+		sendAPIError(w, api_error_consent_response_get, err, nil)
 		return
 	}
 	if results.User.ID != response.ParticipantID {
-		sendAPIError(w, api_error_consent_response_get_err, errors.New("unavailable"), nil)
+		sendAPIError(w, api_error_consent_response_get, errors.New("unavailable"), nil)
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, response)
@@ -68,18 +68,18 @@ func routeParticipantDeleteConsentResponse(w http.ResponseWriter, r *http.Reques
 	// remove the user from the project entirely, removing progress, etc
 	response, err := GetConsentResponseByID(responseID)
 	if err != nil {
-		sendAPIError(w, api_error_consent_response_get_err, err, nil)
+		sendAPIError(w, api_error_consent_response_get, err, nil)
 		return
 	}
 
 	if results.User.ID != response.ParticipantID {
-		sendAPIError(w, api_error_consent_response_get_err, errors.New("unavailable"), nil)
+		sendAPIError(w, api_error_consent_response_get, errors.New("unavailable"), nil)
 		return
 	}
 
 	err = RemoveUserFromProjectCompletely(response.ParticipantID, projectID)
 	if err != nil {
-		sendAPIError(w, api_error_project_unlink_err, err, nil)
+		sendAPIError(w, api_error_project_unlink, err, nil)
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{

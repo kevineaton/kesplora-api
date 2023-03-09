@@ -1,8 +1,11 @@
 package api
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )
 
@@ -41,8 +44,37 @@ func routeAdminUpdateSite(w http.ResponseWriter, r *http.Request) {
 	}
 	err = UpdateSite(site)
 	if err != nil {
-		sendAPIError(w, api_error_site_save_error, err, map[string]string{})
+		sendAPIError(w, api_error_site_save, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, site)
+}
+
+// routeAdminGetUsersOnPlatform gets the list of users on the platform
+func routeAdminGetUsersOnPlatform(w http.ResponseWriter, r *http.Request) {
+	// validity checked in middleware of router
+
+	users, err := GetAllUsersOnPlatform()
+	if err != nil {
+		sendAPIError(w, api_error_users_site, err, map[string]string{})
+		return
+	}
+	sendAPIJSONData(w, http.StatusOK, users)
+}
+
+// routeAdminGetUserOnPlatform gets a single user on the platform
+func routeAdminGetUserOnPlatform(w http.ResponseWriter, r *http.Request) {
+	// validity checked in middleware of router
+	userID, userIDErr := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+	if userIDErr != nil {
+		sendAPIError(w, api_error_invalid_path, errors.New("invalid path"), map[string]string{})
+		return
+	}
+
+	users, err := GetUserByID(userID)
+	if err != nil {
+		sendAPIError(w, api_error_users_site, err, map[string]string{})
+		return
+	}
+	sendAPIJSONData(w, http.StatusOK, users)
 }

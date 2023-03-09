@@ -114,10 +114,10 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 
 	// first, make sure the project can even be signed up for
 	if project.SignupStatus == ProjectSignupStatusClosed {
-		sendAPIError(w, api_error_consent_response_code_err, errors.New("project closed"), map[string]string{})
+		sendAPIError(w, api_error_consent_response_code, errors.New("project closed"), map[string]string{})
 		return
 	} else if project.SignupStatus == ProjectSignupStatusWithCode && input.ProjectCode != project.ShortCode {
-		sendAPIError(w, api_error_consent_response_code_err, errors.New("invalid code"), map[string]string{
+		sendAPIError(w, api_error_consent_response_code, errors.New("invalid code"), map[string]string{
 			"providedCode": input.ProjectCode,
 		})
 		return
@@ -193,7 +193,7 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 	if results.User == nil {
 		// the user isn't logged in, so we will create a new account
 		if input.User == nil {
-			sendAPIError(w, api_error_consent_response_participant_save_err, errors.New("user information must be provided; if this is a project that is anonymous, just pass in a password for the user"), map[string]interface{}{
+			sendAPIError(w, api_error_consent_response_participant_save, errors.New("user information must be provided; if this is a project that is anonymous, just pass in a password for the user"), map[string]interface{}{
 				"input": input,
 			})
 			return
@@ -203,7 +203,7 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 		if project.ParticipantVisibility != "code" {
 			// we create a full account
 			if input.User.FirstName == "" || input.User.LastName == "" || input.User.Email == "" || input.User.Password == "" || input.User.DateOfBirth == "" {
-				sendAPIError(w, api_error_consent_response_participant_save_err, errors.New("all fields required"), map[string]interface{}{})
+				sendAPIError(w, api_error_consent_response_participant_save, errors.New("all fields required"), map[string]interface{}{})
 				return
 			}
 
@@ -230,12 +230,12 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 		// create the actual user
 		err = CreateUser(input.User)
 		if err != nil {
-			sendAPIError(w, api_error_consent_response_participant_save_err, err, map[string]interface{}{})
+			sendAPIError(w, api_error_consent_response_participant_save, err, map[string]interface{}{})
 			return
 		}
 		token, _, err := generateJWT(input.User)
 		if err != nil {
-			sendAPIError(w, api_error_consent_response_participant_save_err, err, map[string]interface{}{
+			sendAPIError(w, api_error_consent_response_participant_save, err, map[string]interface{}{
 				"error": err,
 			})
 			return
@@ -274,12 +274,12 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 			input.User.Status = UserStatusActive
 			err = CreateUser(input.User)
 			if err != nil {
-				sendAPIError(w, api_error_consent_response_participant_save_err, err, map[string]interface{}{})
+				sendAPIError(w, api_error_consent_response_participant_save, err, map[string]interface{}{})
 				return
 			}
 			token, _, err := generateJWT(input.User)
 			if err != nil {
-				sendAPIError(w, api_error_consent_response_participant_save_err, err, map[string]interface{}{
+				sendAPIError(w, api_error_consent_response_participant_save, err, map[string]interface{}{
 					"error": err,
 				})
 				return
@@ -304,14 +304,14 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 	// ok, parse and save
 	err = CreateConsentResponse(input)
 	if err != nil {
-		sendAPIError(w, api_error_consent_response_save_err, err, map[string]string{})
+		sendAPIError(w, api_error_consent_response_save, err, map[string]string{})
 		return
 	}
 
 	// once saved, link the participant to the project
 	err = LinkUserAndProject(results.User.ID, project.ID)
 	if err != nil {
-		sendAPIError(w, api_error_project_link_err, err, map[string]string{})
+		sendAPIError(w, api_error_project_link, err, map[string]string{})
 		return
 	}
 

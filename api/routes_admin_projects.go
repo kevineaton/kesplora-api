@@ -49,7 +49,7 @@ func routeAdminCreateProject(w http.ResponseWriter, r *http.Request) {
 
 	err = CreateProject(input)
 	if err != nil {
-		sendAPIError(w, api_error_project_save_error, err, map[string]string{})
+		sendAPIError(w, api_error_project_save, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusCreated, input)
@@ -128,7 +128,7 @@ func routeAdminUpdateProject(w http.ResponseWriter, r *http.Request) {
 
 	err = UpdateProject(found)
 	if err != nil {
-		sendAPIError(w, api_error_project_save_error, err, map[string]string{})
+		sendAPIError(w, api_error_project_save, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, found)
@@ -167,6 +167,43 @@ func routeAdminGetProjects(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, found)
 }
 
+// routeAdminGetUsersOnProject gets all of the users and their status in a project
+func routeAdminGetUsersOnProject(w http.ResponseWriter, r *http.Request) {
+	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
+	if projectIDErr != nil {
+		sendAPIError(w, api_error_invalid_path, errors.New("invalid path"), map[string]string{})
+		return
+	}
+
+	_, err := GetProjectByID(projectID)
+	if err != nil {
+		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
+		return
+	}
+
+	users, err := GetAllUsersInProject(projectID)
+	if err != nil {
+		sendAPIError(w, api_error_users_project, err, map[string]string{})
+	}
+	sendAPIJSONData(w, http.StatusOK, users)
+}
+
+// routeAdminGetProjectsForUser gets the projects for a user
+func routeAdminGetProjectsForUser(w http.ResponseWriter, r *http.Request) {
+	userID, userIDErr := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+	if userIDErr != nil {
+		sendAPIError(w, api_error_invalid_path, errors.New("invalid path"), map[string]string{})
+		return
+	}
+
+	projects, err := GetProjectsForParticipant(userID)
+	if err != nil {
+		sendAPIError(w, api_error_projects_for_user, err, map[string]string{})
+		return
+	}
+	sendAPIJSONData(w, http.StatusOK, projects)
+}
+
 // routeAdminLinkUserAndProject links a user to a project
 func routeAdminLinkUserAndProject(w http.ResponseWriter, r *http.Request) {
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
@@ -185,7 +222,7 @@ func routeAdminLinkUserAndProject(w http.ResponseWriter, r *http.Request) {
 	// if they are an admin, they can do everything, so ignore pre-reqs
 	err = LinkUserAndProject(userID, projectID)
 	if err != nil {
-		sendAPIError(w, api_error_project_link_err, err, map[string]string{})
+		sendAPIError(w, api_error_project_link, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{
@@ -213,7 +250,7 @@ func routeAdminUnlinkUserAndProject(w http.ResponseWriter, r *http.Request) {
 	// if they are an admin, they can do everything
 	err = UnlinkUserAndProject(userID, projectID)
 	if err != nil {
-		sendAPIError(w, api_error_project_link_err, err, map[string]string{})
+		sendAPIError(w, api_error_project_link, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{

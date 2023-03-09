@@ -111,14 +111,14 @@ func routeParticipantUnlinkUserAndProject(w http.ResponseWriter, r *http.Request
 	// to the project, since it wouldn't matter
 	err = UnlinkUserAndProject(user.ID, projectID)
 	if err != nil {
-		sendAPIError(w, api_error_project_unlink_err, err, map[string]string{})
+		sendAPIError(w, api_error_project_unlink, err, map[string]string{})
 		return
 	}
 
 	if removeProgress != "" {
 		err = RemoveAllProgressForParticipantAndFlow(user.ID, projectID)
 		if err != nil {
-			sendAPIError(w, api_error_project_unlink_err, err, map[string]string{})
+			sendAPIError(w, api_error_project_unlink, err, map[string]string{})
 			return
 		}
 	}

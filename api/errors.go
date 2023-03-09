@@ -28,7 +28,7 @@ const (
 	// auth
 	api_error_auth_missing          = "api_error_auth_missing"
 	api_error_auth_expired          = "api_error_auth_expired"
-	api_error_auth_save_err         = "api_error_auth_expired_save_err"
+	api_error_auth_save             = "api_error_auth_save"
 	api_error_auth_malformed        = "api_error_auth_malformed"
 	api_error_auth_must_admin       = "api_error_auth_must_admin"
 	api_error_auth_must_participant = "api_error_auth_must_participant"
@@ -41,9 +41,11 @@ const (
 	// sites
 	api_error_site_not_active = "api_error_site_not_active"
 	api_error_site_get_error  = "api_error_site_get_error"
-	api_error_site_save_error = "api_error_site_save_error"
+	api_error_site_save       = "api_error_site_save"
 
 	// user errors
+	api_error_users_site       = "api_error_users_site"
+	api_error_users_project    = "api_error_users_project"
 	api_error_user_not_found   = "api_error_user_not_found"
 	api_error_user_general     = "api_error_user_general"
 	api_error_user_cannot_save = "api_error_cannot_save"
@@ -53,48 +55,49 @@ const (
 
 	// project errors
 	api_error_project_missing_data       = "api_error_project_missing_data"
-	api_error_project_save_error         = "api_error_project_save_error"
+	api_error_project_save               = "api_error_project_save"
 	api_error_project_no_projects_found  = "api_error_project_no_projects_found"
 	api_error_project_not_found          = "api_error_project_not_found"
-	api_error_project_link_err           = "api_error_project_link_err"
-	api_error_project_unlink_err         = "api_error_project_unlink_err"
+	api_error_project_link               = "api_error_project_link"
+	api_error_project_unlink             = "api_error_project_unlink"
 	api_error_project_signup_unavailable = "api_error_project_signup_unavailable"
+	api_error_projects_for_user          = "api_error_projects_for_user"
 
 	// consent form errors
-	api_error_consent_save_err                      = "api_error_consent_save_err"
-	api_error_consent_save_participants_not_zero    = "api_error_consent_save_participants_not_zero"
-	api_error_consent_not_found                     = "api_error_consent_not_found"
-	api_error_consent_delete_participants_not_zero  = "api_error_consent_delete_participants_not_zero"
-	api_error_consent_delete_err                    = "api_error_consent_delete_err"
-	api_error_consent_response_project_closed       = "api_error_consent_response_project_closed"
-	api_error_consent_response_code_err             = "api_error_consent_response_code_err"
-	api_error_consent_response_max_reached          = "api_error_consent_response_max_reached"
-	api_error_consent_response_not_min_age          = "api_error_consent_response_not_min_age"
-	api_error_consent_response_participant_save_err = "api_error_consent_response_participant_save_err"
-	api_error_consent_response_save_err             = "api_error_consent_response_save_err"
-	api_error_consent_response_get_err              = "api_error_consent_response_get_err"
+	api_error_consent_save                         = "api_error_consent_save"
+	api_error_consent_save_participants_not_zero   = "api_error_consent_save_participants_not_zero"
+	api_error_consent_not_found                    = "api_error_consent_not_found"
+	api_error_consent_delete_participants_not_zero = "api_error_consent_delete_participants_not_zero"
+	api_error_consent_delete                       = "api_error_consent_delete"
+	api_error_consent_response_project_closed      = "api_error_consent_response_project_closed"
+	api_error_consent_response_code                = "api_error_consent_response_code"
+	api_error_consent_response_max_reached         = "api_error_consent_response_max_reached"
+	api_error_consent_response_not_min_age         = "api_error_consent_response_not_min_age"
+	api_error_consent_response_participant_save    = "api_error_consent_response_participant_save"
+	api_error_consent_response_save                = "api_error_consent_response_save"
+	api_error_consent_response_get                 = "api_error_consent_response_get"
 
 	// module errors
 	api_error_module_missing_data = "api_error_module_missing_data"
-	api_error_module_save_error   = "api_error_module_save_error"
+	api_error_module_save         = "api_error_module_save"
 	api_error_module_not_found    = "api_error_module_not_found"
-	api_error_module_link_err     = "api_error_module_link_err"
-	api_error_module_unlink_err   = "api_error_module_unlink_err"
-	api_error_module_delete_err   = "api_error_module_delete_err"
+	api_error_module_link         = "api_error_module_link"
+	api_error_module_unlink       = "api_error_module_unlink"
+	api_error_module_delete       = "api_error_module_delete"
 
 	// blocks
 	api_error_block_missing_data         = "api_error_block_missing_data"
 	api_error_block_content_missing_data = "api_error_block_content_missing_data"
-	api_error_block_save_error           = "api_error_block_save_error"
+	api_error_block_save                 = "api_error_block_save"
 	api_error_block_invalid_type         = "api_error_block_invalid_type"
 	api_error_block_not_found            = "api_error_block_not_found"
 	api_error_block_content_not_found    = "api_error_block_content_not_found"
-	api_error_block_link_err             = "api_error_block_link_err"
-	api_error_block_unlink_err           = "api_error_block_unlink_err"
-	api_error_block_delete_err           = "api_error_block_delete_err"
+	api_error_block_link                 = "api_error_block_link"
+	api_error_block_unlink               = "api_error_block_unlink"
+	api_error_block_delete               = "api_error_block_delete"
 
-	api_error_block_status_save_err = "api_error_block_status_save_err"
-	api_error_block_status_form     = "api_error_block_status_form"
+	api_error_block_status_save = "api_error_block_status_save"
+	api_error_block_status_form = "api_error_block_status_form"
 
 	// file errors
 	api_error_file_upload_no_provider   = "api_error_file_upload_no_provider"
@@ -135,7 +138,7 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusUnauthorized,
 		Message: "authorization malformed",
 	},
-	api_error_auth_save_err: {
+	api_error_auth_save: {
 		Code:    http.StatusUnauthorized,
 		Message: "authorization could not be saved",
 	},
@@ -171,12 +174,20 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusBadRequest,
 		Message: "site is not configured or site cannot be retrieved",
 	},
-	api_error_site_save_error: {
+	api_error_site_save: {
 		Code:    http.StatusBadRequest,
 		Message: "site cannot be updated",
 	},
 
 	// user
+	api_error_users_site: {
+		Code:    http.StatusBadRequest,
+		Message: "could not fetch users on platform",
+	},
+	api_error_users_project: {
+		Code:    http.StatusBadRequest,
+		Message: "could not fetch users for that project",
+	},
 	api_error_user_not_found: {
 		Code:    http.StatusForbidden,
 		Message: "user missing",
@@ -207,7 +218,7 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusBadRequest,
 		Message: "missing data",
 	},
-	api_error_project_save_error: {
+	api_error_project_save: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save that project",
 	},
@@ -219,11 +230,11 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusForbidden,
 		Message: "project not found or unavailable to user",
 	},
-	api_error_project_link_err: {
+	api_error_project_link: {
 		Code:    http.StatusBadRequest,
 		Message: "could not link that user and project",
 	},
-	api_error_project_unlink_err: {
+	api_error_project_unlink: {
 		Code:    http.StatusBadRequest,
 		Message: "could not unlink that user and project",
 	},
@@ -231,9 +242,13 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusBadRequest,
 		Message: "sign up unavailable",
 	},
+	api_error_projects_for_user: {
+		Code:    http.StatusBadRequest,
+		Message: "could not get projects for that user",
+	},
 
 	// consent and responses
-	api_error_consent_save_err: {
+	api_error_consent_save: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save",
 	},
@@ -249,7 +264,7 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusForbidden,
 		Message: "project already underway",
 	},
-	api_error_consent_delete_err: {
+	api_error_consent_delete: {
 		Code:    http.StatusBadRequest,
 		Message: "could not delete",
 	},
@@ -257,7 +272,7 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusForbidden,
 		Message: "project is closed",
 	},
-	api_error_consent_response_code_err: {
+	api_error_consent_response_code: {
 		Code:    http.StatusForbidden,
 		Message: "code does not match",
 	},
@@ -269,15 +284,15 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusForbidden,
 		Message: "minimum age not met",
 	},
-	api_error_consent_response_participant_save_err: {
+	api_error_consent_response_participant_save: {
 		Code:    http.StatusBadRequest,
 		Message: "participant creation failed, check your input",
 	},
-	api_error_consent_response_save_err: {
+	api_error_consent_response_save: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save",
 	},
-	api_error_consent_response_get_err: {
+	api_error_consent_response_get: {
 		Code:    http.StatusForbidden,
 		Message: "could not find",
 	},
@@ -287,7 +302,7 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusBadRequest,
 		Message: "missing data",
 	},
-	api_error_module_save_error: {
+	api_error_module_save: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save",
 	},
@@ -295,15 +310,15 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusNotFound,
 		Message: "module not found",
 	},
-	api_error_module_link_err: {
+	api_error_module_link: {
 		Code:    http.StatusBadRequest,
 		Message: "could not link that module and project",
 	},
-	api_error_module_unlink_err: {
+	api_error_module_unlink: {
 		Code:    http.StatusBadRequest,
 		Message: "could not unlink that module and project",
 	},
-	api_error_module_delete_err: {
+	api_error_module_delete: {
 		Code:    http.StatusBadRequest,
 		Message: "could not delete the module",
 	},
@@ -317,7 +332,7 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusBadRequest,
 		Message: "missing content data",
 	},
-	api_error_block_save_error: {
+	api_error_block_save: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save",
 	},
@@ -333,21 +348,21 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusNotFound,
 		Message: "block content not found",
 	},
-	api_error_block_link_err: {
+	api_error_block_link: {
 		Code:    http.StatusBadRequest,
 		Message: "could not link that module and block",
 	},
-	api_error_block_unlink_err: {
+	api_error_block_unlink: {
 		Code:    http.StatusBadRequest,
 		Message: "could not unlink that module and block",
 	},
-	api_error_block_delete_err: {
+	api_error_block_delete: {
 		Code:    http.StatusBadRequest,
 		Message: "could not delete the block",
 	},
 
 	// flow and block statuses
-	api_error_block_status_save_err: {
+	api_error_block_status_save: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save that status",
 	},

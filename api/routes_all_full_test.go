@@ -702,6 +702,49 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 	err = mapstructure.Decode(m, partProject)
 	suite.Nil(err)
 
+	// to be safe, let's get all of the users on the site and on the project to make sure the participant shows up
+	code, res, err = testEndpoint(http.MethodGet, "/admin/users", b, routeAdminGetUsersOnPlatform, admin.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, code, res)
+	mS, err = testEndpointResultToSlice(res)
+	suite.Nil(err)
+	users := []User{}
+	err = mapstructure.Decode(mS, &users)
+	suite.Nil(err)
+	suite.NotZero(len(users))
+	foundUser := false
+	for i := range users {
+		if users[i].ID == part.ID {
+			foundUser = true
+		}
+	}
+	suite.True(foundUser)
+
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/users", createdProject.ID), b, routeAdminGetUsersOnProject, admin.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, code, res)
+	mS, err = testEndpointResultToSlice(res)
+	suite.Nil(err)
+	users = []User{}
+	err = mapstructure.Decode(mS, &users)
+	suite.Nil(err)
+	suite.NotZero(len(users))
+	foundUser = false
+	for i := range users {
+		if users[i].ID == part.ID {
+			foundUser = true
+		}
+	}
+	suite.True(foundUser)
+
+	// make sure the participant can't hit these
+	code, res, err = testEndpoint(http.MethodGet, "/admin/users", b, routeAdminGetUsersOnPlatform, part.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusForbidden, code, res)
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/projects/%d/users", createdProject.ID), b, routeAdminGetUsersOnProject, part.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusForbidden, code, res)
+
 	// participant completes each block in turn
 	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/participant/projects/%d/flow", createdProject.ID), b, routeParticipantGetProjectFlow, part.Access)
 	suite.Nil(err)
@@ -905,6 +948,25 @@ func (suite SuiteTestsFullSetup) TestBasicFlow() {
 	err = mapstructure.Decode(m, finalProject)
 	suite.Nil(err)
 	suite.Equal(ProjectStatusCompleted, finalProject.ParticipantStatus)
+
+	// get the user's projects and verify the status
+	code, res, err = testEndpoint(http.MethodGet, fmt.Sprintf("/admin/users/%d/projects", part.ID), b, routeAdminGetProjectsForUser, admin.Access)
+	suite.Nil(err)
+	suite.Equal(http.StatusOK, code, res)
+	projects = []Project{}
+	mS, err = testEndpointResultToSlice(res)
+	suite.Nil(err)
+	err = mapstructure.Decode(mS, &projects)
+	suite.Nil(err)
+	suite.NotZero(len(projects))
+	foundUserAndProject := false
+	for _, p := range projects {
+		if p.ID == createdProject.ID && p.ParticipantID == part.ID {
+			suite.Equal(ProjectUserLinkStatusCompleted, p.ParticipantStatus)
+			foundUserAndProject = true
+		}
+	}
+	suite.True(foundUserAndProject)
 
 	// clean up with some fun deletes
 

@@ -77,7 +77,7 @@ func routeAllConfigureSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		sendAPIError(w, api_error_site_save_error, err, map[string]string{})
+		sendAPIError(w, api_error_site_save, err, map[string]string{})
 		return
 	}
 

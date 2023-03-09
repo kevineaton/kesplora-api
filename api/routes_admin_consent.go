@@ -47,7 +47,7 @@ func routeAdminSaveConsentForm(w http.ResponseWriter, r *http.Request) {
 	input.ProjectID = projectID
 	err = SaveConsentFormForProject(input)
 	if err != nil {
-		sendAPIError(w, api_error_consent_save_err, err, nil)
+		sendAPIError(w, api_error_consent_save, err, nil)
 		return
 	}
 
@@ -77,7 +77,7 @@ func routeAdminDeleteConsentForm(w http.ResponseWriter, r *http.Request) {
 	}
 	err = DeleteConsentFormForProject(projectID)
 	if err != nil {
-		sendAPIError(w, api_error_consent_delete_err, err, nil)
+		sendAPIError(w, api_error_consent_delete, err, nil)
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{
@@ -105,7 +105,7 @@ func routeAdminGetConsentResponses(w http.ResponseWriter, r *http.Request) {
 
 	responses, err := GetConsentResponsesForProject(projectID)
 	if err != nil {
-		sendAPIError(w, api_error_consent_response_get_err, err, nil)
+		sendAPIError(w, api_error_consent_response_get, err, nil)
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, responses)
@@ -129,7 +129,7 @@ func routeAdminGetConsentResponse(w http.ResponseWriter, r *http.Request) {
 	// if the user, make sure it is their's, but it's hard when it's anonymous though
 	response, err := GetConsentResponseByID(responseID)
 	if err != nil {
-		sendAPIError(w, api_error_consent_response_get_err, err, nil)
+		sendAPIError(w, api_error_consent_response_get, err, nil)
 		return
 	}
 
@@ -153,12 +153,12 @@ func routeAdminDeleteConsentResponse(w http.ResponseWriter, r *http.Request) {
 
 	response, err := GetConsentResponseByID(responseID)
 	if err != nil {
-		sendAPIError(w, api_error_consent_response_get_err, err, nil)
+		sendAPIError(w, api_error_consent_response_get, err, nil)
 		return
 	}
 	err = RemoveUserFromProjectCompletely(response.ParticipantID, projectID)
 	if err != nil {
-		sendAPIError(w, api_error_project_unlink_err, err, nil)
+		sendAPIError(w, api_error_project_unlink, err, nil)
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{

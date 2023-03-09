@@ -22,7 +22,7 @@ func routeAdminCreateModule(w http.ResponseWriter, r *http.Request) {
 
 	err := CreateModule(input)
 	if err != nil {
-		sendAPIError(w, api_error_module_save_error, err, map[string]interface{}{
+		sendAPIError(w, api_error_module_save, err, map[string]interface{}{
 			"input": input,
 			"error": err.Error(),
 		})
@@ -92,7 +92,7 @@ func routeAdminUpdateModule(w http.ResponseWriter, r *http.Request) {
 
 	err = UpdateModule(found)
 	if err != nil {
-		sendAPIError(w, api_error_module_save_error, err, map[string]interface{}{
+		sendAPIError(w, api_error_module_save, err, map[string]interface{}{
 			"input": input,
 			"error": err.Error(),
 		})
@@ -171,7 +171,7 @@ func routeAdminLinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 
 	err = LinkModuleAndProject(projectID, moduleID, order)
 	if err != nil {
-		sendAPIError(w, api_error_module_link_err, err, map[string]interface{}{
+		sendAPIError(w, api_error_module_link, err, map[string]interface{}{
 			"error": err.Error(),
 		})
 		return
@@ -210,7 +210,7 @@ func routeAdminUnlinkModuleAndProject(w http.ResponseWriter, r *http.Request) {
 
 	err = UnlinkModuleAndProject(projectID, moduleID)
 	if err != nil {
-		sendAPIError(w, api_error_module_unlink_err, err, map[string]interface{}{
+		sendAPIError(w, api_error_module_unlink, err, map[string]interface{}{
 			"error": err.Error(),
 		})
 		return
@@ -239,7 +239,7 @@ func routeAdminUnlinkAllModulesFromProject(w http.ResponseWriter, r *http.Reques
 
 	err = UnlinkAllModulesFromProject(projectID)
 	if err != nil {
-		sendAPIError(w, api_error_module_unlink_err, err, map[string]interface{}{
+		sendAPIError(w, api_error_module_unlink, err, map[string]interface{}{
 			"error": err.Error(),
 		})
 		return

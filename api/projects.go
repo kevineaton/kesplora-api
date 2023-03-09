@@ -67,6 +67,7 @@ type Project struct {
 	EndDate                         string `json:"endDate" db:"endDate"`
 
 	// needed for the participant and admin views
+	ParticipantID     int64  `json:"participantId,omitempty" db:"participantId"`
 	ParticipantStatus string `json:"participantStatus,omitempty" db:"participantStatus"`
 }
 
@@ -188,7 +189,7 @@ func GetProjectForParticipantByID(participantID, projectID int64) (*Project, err
 // GetProjectsForParticipant gets the lis of projects for a participant
 func GetProjectsForParticipant(participantID int64) ([]Project, error) {
 	projects := []Project{}
-	err := config.DBConnection.Select(&projects, `SELECT p.*, l.status AS participantStatus FROM Projects p, ProjectUserLinks l 
+	err := config.DBConnection.Select(&projects, `SELECT p.*, l.userId AS participantId, l.status AS participantStatus FROM Projects p, ProjectUserLinks l 
 	WHERE l.userId = ? AND l.projectId = p.id ORDER BY status, name`, participantID)
 	for i := range projects {
 		projects[i].processForAPI()

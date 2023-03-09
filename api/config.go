@@ -295,6 +295,14 @@ func SetupAPI() *chi.Mux {
 			// site
 			r.Patch("/site", routeAdminUpdateSite)
 
+			// users
+			r.Get("/users", routeAdminGetUsersOnPlatform)
+			r.Get("/users/{userID}", routeAdminGetUserOnPlatform)
+			r.Get("/users/{userID}/projects", routeAdminGetProjectsForUser)
+			r.Get("/users/{userID}/projects/{projectID}", notImplementedRoute)
+			r.Post("/users/{userID}/projects/{projectID}", routeAdminLinkUserAndProject) // used for overriding, but should be careful due to consent flows
+			r.Delete("/users/{userID}/projects/{projectID}", routeAdminUnlinkUserAndProject)
+
 			// projects
 			r.Post("/projects", routeAdminCreateProject)
 			r.Get("/projects", routeAdminGetProjects)
@@ -308,8 +316,8 @@ func SetupAPI() *chi.Mux {
 			r.Get("/projects/{projectID}/consent/responses/{responseID}", routeAdminGetConsentResponse)
 			r.Delete("/projects/{projectID}/consent/responses/{responseID}", routeAdminDeleteConsentResponse)
 
-			// project / users
-			r.Get("/projects/{projectID}/users", notImplementedRoute)
+			// project / users; note that the link and unlink are duplicated routes for convenience
+			r.Get("/projects/{projectID}/users", routeAdminGetUsersOnProject)
 			r.Post("/projects/{projectID}/users/{userID}", routeAdminLinkUserAndProject) // used for overriding, but should be careful due to consent flows
 			r.Delete("/projects/{projectID}/users/{userID}", routeAdminUnlinkUserAndProject)
 

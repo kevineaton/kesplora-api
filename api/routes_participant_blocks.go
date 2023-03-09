@@ -111,7 +111,7 @@ func routeParticipantSaveBlockStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	err = SaveBlockUserStatusForParticipant(input)
 	if err != nil {
-		sendAPIError(w, api_error_block_status_save_err, err, map[string]interface{}{})
+		sendAPIError(w, api_error_block_status_save, err, map[string]interface{}{})
 		return
 	}
 
@@ -160,7 +160,7 @@ func routeParticipantRemoveBlockStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		sendAPIError(w, api_error_block_status_save_err, err, map[string]interface{}{})
+		sendAPIError(w, api_error_block_status_save, err, map[string]interface{}{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{
@@ -280,7 +280,7 @@ func routeParticipantSaveFormResponse(w http.ResponseWriter, r *http.Request) {
 	}
 	err = SaveBlockUserStatusForParticipant(status)
 	if err != nil {
-		sendAPIError(w, api_error_block_status_save_err, err, map[string]interface{}{})
+		sendAPIError(w, api_error_block_status_save, err, map[string]interface{}{})
 		return
 	}
 
@@ -377,7 +377,7 @@ func routeParticipantDeleteSubmissions(w http.ResponseWriter, r *http.Request) {
 	}
 	err = SaveBlockUserStatusForParticipant(status)
 	if err != nil {
-		sendAPIError(w, api_error_block_status_save_err, err, map[string]interface{}{})
+		sendAPIError(w, api_error_block_status_save, err, map[string]interface{}{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{
