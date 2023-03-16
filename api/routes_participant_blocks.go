@@ -95,7 +95,7 @@ func routeParticipantSaveBlockStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: if block is a form, they can't use this endpoint
+	// if block is a form, they can't use this endpoint
 	if block.BlockType == BlockTypeForm {
 		sendAPIError(w, api_error_block_status_form, errors.New("incorrect path"), map[string]interface{}{})
 		return
@@ -168,6 +168,7 @@ func routeParticipantRemoveBlockStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// routeParticipantSaveFormResponse saves a new form response for a user
 func routeParticipantSaveFormResponse(w http.ResponseWriter, r *http.Request) {
 	user, err := getUserFromHTTPContext(r)
 	if err != nil || user == nil {
@@ -212,8 +213,6 @@ func routeParticipantSaveFormResponse(w http.ResponseWriter, r *http.Request) {
 	input := &BlockFormQestionResponseInput{}
 	render.Bind(r, input)
 
-	// TODO: check for existing submissions
-
 	// now, create a new submission
 	submission := &BlockFormSubmission{
 		BlockID: blockID,
@@ -221,8 +220,7 @@ func routeParticipantSaveFormResponse(w http.ResponseWriter, r *http.Request) {
 	}
 	err = CreateBlockFormSubmission(submission)
 	if err != nil {
-		// TODO: replace with better error
-		sendAPIError(w, api_error_block_not_found, err, map[string]interface{}{})
+		sendAPIError(w, api_error_submission_create, err, map[string]interface{}{})
 		return
 	}
 
@@ -287,6 +285,7 @@ func routeParticipantSaveFormResponse(w http.ResponseWriter, r *http.Request) {
 	sendAPIJSONData(w, http.StatusOK, submission)
 }
 
+// routeParticipantGetFormSubmissions gets all of the submissions to a particular form for a user
 func routeParticipantGetFormSubmissions(w http.ResponseWriter, r *http.Request) {
 	user, err := getUserFromHTTPContext(r)
 	if err != nil || user == nil {
@@ -317,8 +316,8 @@ func routeParticipantGetFormSubmissions(w http.ResponseWriter, r *http.Request) 
 
 	submissions, err := GetBlockFormSubmissionsForUser(user.ID, blockID)
 	if err != nil {
-		// TODO: err
-		fmt.Printf("|ERR: %+v\n", err)
+		sendAPIError(w, api_error_submission_fetch, err, map[string]string{})
+		return
 	}
 	for i := range submissions {
 		submissions[i].Responses, _ = GetBlockFormSubmissionResponsesForSubmission(submissions[i].ID)
@@ -327,6 +326,7 @@ func routeParticipantGetFormSubmissions(w http.ResponseWriter, r *http.Request) 
 	sendAPIJSONData(w, http.StatusOK, submissions)
 }
 
+// routeParticipantDeleteSubmissions deletes all of a user's submissions for a specific form
 func routeParticipantDeleteSubmissions(w http.ResponseWriter, r *http.Request) {
 	user, err := getUserFromHTTPContext(r)
 	if err != nil || user == nil {
@@ -357,7 +357,8 @@ func routeParticipantDeleteSubmissions(w http.ResponseWriter, r *http.Request) {
 
 	submissions, err := GetBlockFormSubmissionsForUser(user.ID, blockID)
 	if err != nil {
-		fmt.Printf("err: %+v\n", err)
+		sendAPIError(w, api_error_submission_missing, err, map[string]string{})
+		return
 	}
 
 	for i := range submissions {
@@ -380,6 +381,80 @@ func routeParticipantDeleteSubmissions(w http.ResponseWriter, r *http.Request) {
 		sendAPIError(w, api_error_block_status_save, err, map[string]interface{}{})
 		return
 	}
+	sendAPIJSONData(w, http.StatusOK, map[string]bool{
+		"deleted": true,
+	})
+}
+
+// routeParticipantDeleteSubmission deletes one of a user's submissions for a specific form
+func routeParticipantDeleteSubmission(w http.ResponseWriter, r *http.Request) {
+	user, err := getUserFromHTTPContext(r)
+	if err != nil || user == nil {
+		// this should not have happened
+		sendAPIError(w, api_error_auth_missing, errors.New("missing user"), nil)
+		return
+	}
+
+	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
+	moduleID, moduleIDErr := strconv.ParseInt(chi.URLParam(r, "moduleID"), 10, 64)
+	blockID, blockIDErr := strconv.ParseInt(chi.URLParam(r, "blockID"), 10, 64)
+	submissionID, submissionIDErr := strconv.ParseInt(chi.URLParam(r, "submissionID"), 10, 64)
+	if projectIDErr != nil || moduleIDErr != nil || blockIDErr != nil || submissionIDErr != nil {
+		sendAPIError(w, api_error_invalid_path, errors.New("invalid path"), map[string]string{})
+		return
+	}
+
+	connected := IsUserInProject(user.ID, projectID)
+	if !connected {
+		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
+		return
+	}
+
+	_, err = GetModuleBlockForParticipant(user.ID, projectID, moduleID, blockID)
+	if err != nil {
+		sendAPIError(w, api_error_block_not_found, err, map[string]interface{}{})
+		return
+	}
+
+	sub, err := GetBlockFormSubmissionByID(submissionID)
+	if err != nil {
+		sendAPIError(w, api_error_submission_fetch, err, map[string]string{})
+		return
+	}
+	if sub.BlockID != blockID || sub.UserID != user.ID {
+		sendAPIError(w, api_error_submission_mismatch, err, map[string]string{})
+		return
+	}
+
+	err = DeleteBlockFormSubmission(submissionID)
+	if err != nil {
+		sendAPIError(w, api_error_submission_delete, err, map[string]string{})
+		return
+	}
+
+	// we only set the status back if there are no submissions remaining
+	otherSubs, err := GetBlockFormSubmissionsForUser(user.ID, blockID)
+	if err != nil {
+		sendAPIError(w, api_error_submission_fetch, err, map[string]string{})
+		return
+	}
+
+	if len(otherSubs) == 0 {
+		status := &BlockUserStatus{
+			UserID:        user.ID,
+			ProjectID:     projectID,
+			ModuleID:      moduleID,
+			BlockID:       blockID,
+			LastUpdatedOn: time.Now().Format(timeFormatAPI),
+			UserStatus:    BlockUserStatusNotStarted,
+		}
+		err = SaveBlockUserStatusForParticipant(status)
+		if err != nil {
+			sendAPIError(w, api_error_block_status_save, err, map[string]interface{}{})
+			return
+		}
+	}
+
 	sendAPIJSONData(w, http.StatusOK, map[string]bool{
 		"deleted": true,
 	})

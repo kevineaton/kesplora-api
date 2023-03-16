@@ -18,6 +18,10 @@ type Block struct {
 
 	UserStatus    string `json:"userStatus,omitempty" db:"userStatus"`
 	LastUpdatedOn string `json:"lastUpdatedOn,omitempty" db:"lastUpdatedOn"`
+	ProjectID     int64  `json:"projectId,omitempty" db:"projectId"`
+	ProjectName   string `json:"projectName,omitempty" db:"projectName"`
+	ModuleID      int64  `json:"moduleId,omitempty" db:"moduleId"`
+	ModuleName    string `json:"moduleName,omitempty" db:"moduleName"`
 }
 
 const (
@@ -89,15 +93,21 @@ func GetModuleBlockForParticipant(participantID, projectID, moduleID, blockID in
 	block := &Block{}
 	defer block.processForAPI()
 	err := config.DBConnection.Get(block, `SELECT b.*, 
+	p.id AS projectId,
+	p.name AS projectName,
+	m.id AS moduleId,
+	m.name AS moduleName,
 	IFNULL(bus.status, 'not_started') AS userStatus,
 	IFNULL(bus.lastUpdatedOn, NOW()) AS lastUpdatedOn
-	FROM Blocks b, BlockModuleFlows bmf, Flows f
+	FROM Blocks b, BlockModuleFlows bmf, Flows f, Modules m, Projects p
 	LEFT JOIN BlockUserStatus bus ON bus.userId = ? AND bus.blockId = ?
 	WHERE b.id = ? AND
 	b.id = bmf.blockId AND
 	bmf.moduleId = ? AND
 	bmf.moduleId = f.moduleId AND
-	f.projectId = ?;`, participantID, blockID, blockID, moduleID, projectID)
+	f.projectId = ? AND
+	f.projectId = p.id AND
+	f.moduleId = m.id`, participantID, blockID, blockID, moduleID, projectID)
 	return block, err
 }
 

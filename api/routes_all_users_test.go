@@ -129,7 +129,7 @@ func (suite SuiteTestsUserRoutes) TestUserAuthRoutes() {
 	})
 	code, res, err = testEndpoint(http.MethodPost, "/login", b, routeAllUserLogin, "")
 	suite.Nil(err)
-	suite.Equal(http.StatusForbidden, code, res)
+	suite.Equal(http.StatusOK, code, res)
 }
 
 func (suite SuiteTestsUserRoutes) TestUserAuthRefresh() {

@@ -205,6 +205,35 @@ func routeAdminGetProjectsForUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // routeAdminLinkUserAndProject links a user to a project
+func routeAdminGetProjectForUser(w http.ResponseWriter, r *http.Request) {
+	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
+	userID, userIDErr := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+	if projectIDErr != nil || userIDErr != nil {
+		sendAPIError(w, api_error_invalid_path, errors.New("invalid path"), map[string]string{})
+		return
+	}
+
+	_, err := GetProjectByID(projectID)
+	if err != nil {
+		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
+		return
+	}
+
+	if !IsUserInProject(userID, projectID) {
+		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
+		return
+	}
+
+	flow, err := GetProjectFlowForParticipant(userID, projectID)
+	if err != nil {
+		sendAPIError(w, api_error_project_not_found, err, map[string]string{})
+		return
+	}
+
+	sendAPIJSONData(w, http.StatusOK, flow)
+}
+
+// routeAdminLinkUserAndProject links a user to a project
 func routeAdminLinkUserAndProject(w http.ResponseWriter, r *http.Request) {
 	projectID, projectIDErr := strconv.ParseInt(chi.URLParam(r, "projectID"), 10, 64)
 	userID, userIDErr := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)

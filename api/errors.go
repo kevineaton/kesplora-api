@@ -62,6 +62,7 @@ const (
 	api_error_project_unlink             = "api_error_project_unlink"
 	api_error_project_signup_unavailable = "api_error_project_signup_unavailable"
 	api_error_projects_for_user          = "api_error_projects_for_user"
+	api_error_projects_user_not_in       = "api_error_projects_user_not_in"
 
 	// consent form errors
 	api_error_consent_save                         = "api_error_consent_save"
@@ -99,6 +100,12 @@ const (
 	api_error_block_status_save = "api_error_block_status_save"
 	api_error_block_status_form = "api_error_block_status_form"
 
+	api_error_submission_fetch    = "api_error_submission_fetch"
+	api_error_submission_mismatch = "api_error_submission_mismatch"
+	api_error_submission_missing  = "api_error_submission_missing"
+	api_error_submission_create   = "api_error_submission_create"
+	api_error_submission_delete   = "api_error_submission_delete"
+
 	// file errors
 	api_error_file_upload_no_provider   = "api_error_file_upload_no_provider"
 	api_error_file_upload_parse_general = "api_error_file_upload_parse_general"
@@ -111,6 +118,11 @@ const (
 	api_error_file_delete_remote        = "api_error_file_delete_remote"
 	api_error_file_delete_meta          = "api_error_file_delete_meta"
 	api_error_file_update_meta          = "api_error_file_update_meta"
+
+	// notes errors
+	api_error_notes_not_found = "api_error_notes_not_found"
+	api_error_notes_delete    = "api_error_notes_delete"
+	api_error_notes_save      = "api_error_notes_save"
 )
 
 // apiErrors is a mapping of keys to data
@@ -246,6 +258,10 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusBadRequest,
 		Message: "could not get projects for that user",
 	},
+	api_error_projects_user_not_in: {
+		Code:    http.StatusBadRequest,
+		Message: "user is not a participant in that project",
+	},
 
 	// consent and responses
 	api_error_consent_save: {
@@ -371,6 +387,27 @@ var apiErrors = map[string]apiError{
 		Message: "to save a form, you have to call the /submissions path, not the /status path",
 	},
 
+	api_error_submission_missing: {
+		Code:    http.StatusNotFound,
+		Message: "that submission does not exist",
+	},
+	api_error_submission_mismatch: {
+		Code:    http.StatusForbidden,
+		Message: "that submission and the passed in data don't match",
+	},
+	api_error_submission_fetch: {
+		Code:    http.StatusBadRequest,
+		Message: "could not fetch that submission",
+	},
+	api_error_submission_create: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save that submission",
+	},
+	api_error_submission_delete: {
+		Code:    http.StatusBadRequest,
+		Message: "could not delete that submission",
+	},
+
 	// files
 	api_error_file_upload_no_provider: {
 		Code:    http.StatusBadRequest,
@@ -415,5 +452,19 @@ var apiErrors = map[string]apiError{
 	api_error_file_update_meta: {
 		Code:    http.StatusBadRequest,
 		Message: "could not update the file metadata",
+	},
+
+	// notes
+	api_error_notes_not_found: {
+		Code:    http.StatusNotFound,
+		Message: "note or notes not found",
+	},
+	api_error_notes_delete: {
+		Code:    http.StatusBadRequest,
+		Message: "could not delete note",
+	},
+	api_error_notes_save: {
+		Code:    http.StatusBadRequest,
+		Message: "could not save that note",
 	},
 }

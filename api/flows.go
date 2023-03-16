@@ -24,6 +24,7 @@ type Flow struct {
 	BlockID           int64  `json:"blockId" db:"blockId"`
 	BlockName         string `json:"blockName" db:"blockName"`
 	BlockSummary      string `json:"blockSummary" db:"blockSummary"`
+	BlockType         string `json:"blockType" db:"blockType"`
 	UserStatus        string `json:"userStatus" db:"userStatus"`
 	LastUpdatedOn     string `json:"lastUpdatedOn" db:"lastUpdatedOn"`
 }
@@ -48,7 +49,7 @@ type BlockUserStatus struct {
 func GetProjectFlowForParticipant(participantID, projectID int64) ([]Flow, error) {
 	flow := []Flow{}
 	err := config.DBConnection.Select(&flow, `SELECT f.flowOrder, m.id AS moduleId, m.name AS moduleName, m.description AS moduleDescription, 
-	b.id AS blockId, b.name AS blockName, b.summary AS blockSummary, 
+	b.id AS blockId, b.name AS blockName, b.summary AS blockSummary, b.blockType AS blockType,
 	IFNULL(bus.status, 'not_started') AS userStatus,
 	IFNULL(bus.lastUpdatedOn, NOW()) AS lastUpdatedOn
 	FROM (Flows f, Modules m, Blocks b, BlockModuleFlows bmf)
@@ -77,7 +78,21 @@ func SaveBlockUserStatusForParticipant(input *BlockUserStatus) error {
 	return err
 }
 
-// we have three separate delets for different levels; this allows the clients to not have to make
+// IsModuleInProject checks if a module is in a project flow
+func IsModuleInProject(projectID, moduleID int64) bool {
+	c := &CountReturn{}
+	err := config.DBConnection.Get(c, `SELECT COUNT(*) AS count FROM Flows WHERE projectId = ? AND moduleId = ?`, projectID, moduleID)
+	return err == nil && c.Count > 0
+}
+
+// IsBlockInModule checks if a block is in a module for a flow
+func IsBlockInModule(moduleID, blockID int64) bool {
+	c := &CountReturn{}
+	err := config.DBConnection.Get(c, `SELECT COUNT(*) AS count FROM BlockModuleFlows WHERE moduleId = ? AND blockId = ?`, moduleID, blockID)
+	return err == nil && c.Count > 0
+}
+
+// we have three separate deletes for different levels; this allows the clients to not have to make
 // many different calls for large projects; keep in mind that the routes may need to do things like clear
 // out responses to surveys, etc
 

@@ -243,7 +243,7 @@ func SetupAPI() *chi.Mux {
 	}
 
 	// set up the routes applicable to everyone
-	// TODO: do we want to mirror and redirect these so they are available under /participant and /project as well?
+	// We don't mirror these in case we wanted duplicated routes (for example /site vs /participant/site vs /admin/site, which could all return different info)
 	r.Get("/", routeApiStatusReady)
 
 	// sites and unauthed admin routes for setup
@@ -299,7 +299,7 @@ func SetupAPI() *chi.Mux {
 			r.Get("/users", routeAdminGetUsersOnPlatform)
 			r.Get("/users/{userID}", routeAdminGetUserOnPlatform)
 			r.Get("/users/{userID}/projects", routeAdminGetProjectsForUser)
-			r.Get("/users/{userID}/projects/{projectID}", notImplementedRoute)
+			r.Get("/users/{userID}/projects/{projectID}", routeAdminGetProjectForUser)
 			r.Post("/users/{userID}/projects/{projectID}", routeAdminLinkUserAndProject) // used for overriding, but should be careful due to consent flows
 			r.Delete("/users/{userID}/projects/{projectID}", routeAdminUnlinkUserAndProject)
 
@@ -345,9 +345,15 @@ func SetupAPI() *chi.Mux {
 			r.Put("/modules/{moduleID}/blocks/{blockID}/order/{order}", routeAdminLinkBlockAndModule)
 			r.Delete("/modules/{moduleID}/blocks/{blockID}", routeAdminUnlinkBlockAndModule)
 
-			// user / block progress
+			// user / block progress and info
 			r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
 			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
+
+			// submissions
+			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions", routeAdminGetUserSubmissions)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions", routeAdminDeleteUserSubmissions)
+			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions/{submissionID}", routeAdminGetUserSubmission)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions/{submissionID}", routeAdminDeleteUserSubmission)
 
 			// files
 			r.Post("/files", routeAdminUploadFile) // multipart-form
@@ -357,6 +363,13 @@ func SetupAPI() *chi.Mux {
 			r.Patch("/files/{fileID}", routeUpdateFileMetadata)
 			r.Get("/files/{fileID}", routeAdminGetFileMetaData)
 			r.Get("/files/{fileID}/download", routeAdminDownloadFile)
+
+			// notes; NOTE: these are duplicated to allow participants and admins to journal as needed with same routes
+			r.Get("/notes", routeAllGetMyNotes)
+			r.Post("/notes", routeAllCreateNote)
+			r.Get("/notes/{noteID}", routeAllGetMyNoteByID)
+			r.Patch("/notes/{noteID}", routeAllUpdateNoteByID)
+			r.Delete("/notes/{noteID}", routeAllDeleteMyNoteByID)
 
 		})
 	}
@@ -395,7 +408,7 @@ func SetupAPI() *chi.Mux {
 			r.Post("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantSaveFormResponse)
 			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantGetFormSubmissions)
 			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantDeleteSubmissions)
-			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions/{submissionID}", notImplementedRoute)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions/{submissionID}", routeParticipantDeleteSubmission)
 
 			// participant's can reset their status
 			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/status", routeParticipantRemoveBlockStatus)
@@ -406,6 +419,12 @@ func SetupAPI() *chi.Mux {
 			r.Get("/files/{fileID}", routeParticipantGetFileMetaData)
 			r.Get("/files/{fileID}/download", routeParticipantDownloadFile)
 
+			// notes; NOTE: these are duplicated to allow participants and admins to journal as needed with same routes
+			r.Get("/notes", routeAllGetMyNotes)
+			r.Post("/notes", routeAllCreateNote)
+			r.Get("/notes/{noteID}", routeAllGetMyNoteByID)
+			r.Patch("/notes/{noteID}", routeAllUpdateNoteByID)
+			r.Delete("/notes/{noteID}", routeAllDeleteMyNoteByID)
 		})
 	}
 	return r

@@ -61,11 +61,11 @@ type BlockFormQuestionOption struct {
 
 // BlockFormSubmission is a completed submission which will like in responses
 type BlockFormSubmission struct {
-	ID        int64  `json:"id" db:"id"`
-	BlockID   int64  `json:"blockId" db:"blockId"`
-	UserID    int64  `json:"userId" db:"userId"`
-	Submitted string `json:"submitted" db:"submitted"`
-	Results   string `json:"results" db:"results"`
+	ID          int64  `json:"id" db:"id"`
+	BlockID     int64  `json:"blockId" db:"blockId"`
+	UserID      int64  `json:"userId" db:"userId"`
+	SubmittedOn string `json:"submittedOn" db:"submittedOn"`
+	Results     string `json:"results" db:"results"`
 	// needed for the return
 	Responses []BlockFormSubmissionResponse `json:"responses"`
 }
@@ -79,6 +79,7 @@ type BlockFormSubmissionResponse struct {
 	OptionID     int64  `json:"optionId" db:"optionId"`
 	TextResponse string `json:"textResponse" db:"textResponse"`
 	IsCorrect    string `json:"isCorrect" db:"isCorrect"`
+	QuestionText string `json:"questionText" db:"questionText"`
 }
 
 // BlockFormQestionResponseInput is a helper input for sending many responses at once to the API
@@ -294,7 +295,7 @@ func CreateBlockFormSubmission(input *BlockFormSubmission) error {
 	res, err := config.DBConnection.NamedExec(`INSERT INTO BlockFormSubmissions SET
 		blockId = :blockId,
 		userId = :userId,
-		submitted = :submitted,
+		submittedOn = :submittedOn,
 		results = :results
 	`, input)
 	if err != nil {
@@ -312,7 +313,7 @@ func UpdateBlockFormSubmission(input *BlockFormSubmission) error {
 	_, err := config.DBConnection.NamedExec(`UPDATE BlockFormSubmissions SET
 		blockId = :blockId,
 		userId = :userId,
-		submitted = :submitted,
+		submittedOn = :submittedOn,
 		results = :results
 		WHERE id = :id
 	`, input)
@@ -330,7 +331,7 @@ func GetBlockFormSubmissionByID(id int64) (*BlockFormSubmission, error) {
 // GetBlockFormSubmissionByID gets a specific response
 func GetBlockFormSubmissionsForUser(userID, blockID int64) ([]BlockFormSubmission, error) {
 	submissions := []BlockFormSubmission{}
-	err := config.DBConnection.Select(&submissions, `SELECT * FROM BlockFormSubmissions WHERE userId = ? AND blockId = ? ORDER BY submitted`, userID, blockID)
+	err := config.DBConnection.Select(&submissions, `SELECT * FROM BlockFormSubmissions WHERE userId = ? AND blockId = ? ORDER BY submittedOn`, userID, blockID)
 	for i := range submissions {
 		submissions[i].processForAPI()
 	}
@@ -389,7 +390,9 @@ func UpdateBlockFormSubmissionResponse(input *BlockFormSubmissionResponse) error
 // GetBlockFormSubmissionResponsesForSubmission gets all of the responses for a submission
 func GetBlockFormSubmissionResponsesForSubmission(submissionID int64) ([]BlockFormSubmissionResponse, error) {
 	responses := []BlockFormSubmissionResponse{}
-	err := config.DBConnection.Select(&responses, `SELECT * FROM BlockFormSubmissionResponses WHERE submissionId = ?`, submissionID)
+	err := config.DBConnection.Select(&responses, `SELECT s.*, q.question AS questionText 
+	FROM BlockFormSubmissionResponses s, BlockFormQuestions q 
+	WHERE s.submissionId = ? AND s.questionId = q.id`, submissionID)
 	for i := range responses {
 		responses[i].processForAPI()
 	}
@@ -442,10 +445,10 @@ func (input *BlockFormQuestionOption) processForAPI() {
 }
 
 func (input *BlockFormSubmission) processForDB() {
-	if input.Submitted == "" {
-		input.Submitted = time.Now().Format(timeFormatDB)
+	if input.SubmittedOn == "" {
+		input.SubmittedOn = time.Now().Format(timeFormatDB)
 	} else {
-		input.Submitted, _ = parseTimeToTimeFormat(input.Submitted, timeFormatDB)
+		input.SubmittedOn, _ = parseTimeToTimeFormat(input.SubmittedOn, timeFormatDB)
 	}
 	if input.Results == "" {
 		input.Results = BlockFormSubmissionResultsNA
@@ -453,7 +456,7 @@ func (input *BlockFormSubmission) processForDB() {
 }
 
 func (input *BlockFormSubmission) processForAPI() {
-	input.Submitted, _ = parseTimeToTimeFormat(input.Submitted, timeFormatAPI)
+	input.SubmittedOn, _ = parseTimeToTimeFormat(input.SubmittedOn, timeFormatAPI)
 }
 
 func (input *BlockFormSubmissionResponse) processForDB() {

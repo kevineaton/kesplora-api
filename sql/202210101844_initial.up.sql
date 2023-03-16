@@ -43,6 +43,7 @@ DROP TABLE IF EXISTS `ProjectUserLinks`;
 CREATE TABLE `ProjectUserLinks` (
   `projectId` int(11) NOT NULL,
   `userId` int(11) NOT NULL,
+  `status` enum('not_started', 'started', 'completed') NOT NULL DEFAULT 'not_started',
   PRIMARY KEY (`projectId`, `userId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -119,7 +120,7 @@ CREATE TABLE `BlockFormSubmissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `blockId` int(11) NOT NULL,
   `userId` int(11) NOT NULL,
-  `submitted` datetime NOT NULL,
+  `submittedOn` datetime NOT NULL,
   `results` enum('na', 'needs_input', 'passed', 'failed'),
   PRIMARY KEY (`id`),
   KEY (`blockId`),
@@ -185,7 +186,7 @@ DROP TABLE IF EXISTS `ConsentResponses`;
 CREATE TABLE `ConsentResponses` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `projectId` int(11) NOT NULL,
-  `dateConsented` datetime NOT NULL,
+  `submittedOn` datetime NOT NULL,
   `consentStatus` enum('accepted','accepted_for_other','declined') DEFAULT NULL,
   `participantComments` text NOT NULL,
   `researcherComments` text NOT NULL,
@@ -253,3 +254,20 @@ CREATE TABLE `BlockFile` (
   `fileId` int(11) NOT NULL,
   PRIMARY KEY (`blockId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `Notes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `userId` int(11) NOT NULL,
+  `createdOn` datetime NOT NULL,
+  `noteType` enum('journal','project') NOT NULL DEFAULT 'journal',
+  `projectId` int(11) NOT NULL DEFAULT 0,
+  `moduleId` int(11) NOT NULL DEFAULT 0,
+  `blockId` int(11) NOT NULL DEFAULT 0,
+  `visibility` enum('private','admins') NOT NULL DEFAULT 'private',
+  `title` varchar(512) NOT NULL DEFAULT '',
+  `body` varchar(5096) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `userId` (`userId`),
+  KEY `projectId` (`projectId`),
+  KEY `ids` (`userId`,`projectId`,`moduleId`,`blockId`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;

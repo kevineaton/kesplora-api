@@ -39,9 +39,9 @@ type User struct {
 	SystemRole      string `json:"systemRole" db:"systemRole"`
 	CreatedOn       string `json:"createdOn" db:"createdOn"`
 	LastLoginOn     string `json:"lastLoginOn" db:"lastLoginOn"`
-	Access          string `json:"access"`
-	Refresh         string `json:"refresh"` // web clients should not store this in local storage and should instead use the cookies!
-	Expires         string `json:"expires"`
+	Access          string `json:"access,omitempty"`
+	Refresh         string `json:"refresh,omitempty"` // web clients should not store this in local storage and should instead use the cookies!
+	Expires         string `json:"expires,omitempty"`
 
 	// these are used for the admin reports
 	ProjectCount  int64     `json:"projectCount,omitempty" db:"projectCount"`

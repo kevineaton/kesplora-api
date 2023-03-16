@@ -110,9 +110,13 @@ func routeAllUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	if input.DateOfBirth != "" {
 		user.DateOfBirth = input.DateOfBirth
 	}
+	if input.Password != "" {
+		user.Password = input.Password
+	}
 	err = UpdateUser(user)
 	if err != nil {
 		sendAPIError(w, api_error_user_general, err, map[string]string{})
+		return
 	}
 	sendAPIJSONData(w, http.StatusOK, user)
 }
