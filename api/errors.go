@@ -61,8 +61,9 @@ const (
 	api_error_project_link               = "api_error_project_link"
 	api_error_project_unlink             = "api_error_project_unlink"
 	api_error_project_signup_unavailable = "api_error_project_signup_unavailable"
-	api_error_projects_for_user          = "api_error_projects_for_user"
-	api_error_projects_user_not_in       = "api_error_projects_user_not_in"
+	api_error_project_for_user           = "api_error_projects_for_user"
+	api_error_project_user_not_in        = "api_error_projects_user_not_in"
+	api_error_project_misconfiguration   = "api_error_project_misconfiguration"
 
 	// consent form errors
 	api_error_consent_save                         = "api_error_consent_save"
@@ -123,6 +124,9 @@ const (
 	api_error_notes_not_found = "api_error_notes_not_found"
 	api_error_notes_delete    = "api_error_notes_delete"
 	api_error_notes_save      = "api_error_notes_save"
+
+	// reports errors
+	api_error_reports_get = "api_error_reports_get"
 )
 
 // apiErrors is a mapping of keys to data
@@ -254,13 +258,17 @@ var apiErrors = map[string]apiError{
 		Code:    http.StatusBadRequest,
 		Message: "sign up unavailable",
 	},
-	api_error_projects_for_user: {
+	api_error_project_for_user: {
 		Code:    http.StatusBadRequest,
 		Message: "could not get projects for that user",
 	},
-	api_error_projects_user_not_in: {
+	api_error_project_user_not_in: {
 		Code:    http.StatusBadRequest,
 		Message: "user is not a participant in that project",
+	},
+	api_error_project_misconfiguration: {
+		Code:    http.StatusBadRequest,
+		Message: "the passed in data results in a misconfiguration or is otherwise incorrect",
 	},
 
 	// consent and responses
@@ -466,5 +474,11 @@ var apiErrors = map[string]apiError{
 	api_error_notes_save: {
 		Code:    http.StatusBadRequest,
 		Message: "could not save that note",
+	},
+
+	// reports
+	api_error_reports_get: {
+		Code:    http.StatusBadRequest,
+		Message: "could not fetch that report",
 	},
 }

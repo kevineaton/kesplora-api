@@ -371,6 +371,14 @@ func SetupAPI() *chi.Mux {
 			r.Patch("/notes/{noteID}", routeAllUpdateNoteByID)
 			r.Delete("/notes/{noteID}", routeAllDeleteMyNoteByID)
 
+			// reports
+			r.Get("/reports/projects/{projectID}/status", routeAdminReportGetCountOfUsersOnProjectByStatus)
+			r.Get("/reports/projects/{projectID}/lastUpdatedOn", routeAdminReportGetCountOfLastUpdatedForProject)
+			r.Get("/reports/projects/{projectID}/flow/status", routeAdminReportGetCountOfStatusForProject)
+			r.Get("/reports/projects/{projectID}/flow/submissions", routeAdminReportGetSubmissionCountForProject)
+			r.Get("/reports/projects/{projectID}/flow/modules/{moduleID}/blocks/{blockID}/submissions", routeAdminReportGetProjectSubmissionResponses)
+			r.Get("/reports/projects/{projectID}/flow/modules/{moduleID}/blocks/{blockID}/submissions/export", routeAdminReportExportProjectSubmissionResponses)
+
 		})
 	}
 

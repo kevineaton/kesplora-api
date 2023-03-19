@@ -281,7 +281,7 @@ func routeAdminGetUserSubmissions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !IsUserInProject(userID, projectID) {
-		sendAPIError(w, api_error_projects_user_not_in, errors.New("user not in that project"), map[string]string{})
+		sendAPIError(w, api_error_project_user_not_in, errors.New("user not in that project"), map[string]string{})
 		return
 	}
 
@@ -314,7 +314,7 @@ func routeAdminDeleteUserSubmissions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !IsUserInProject(userID, projectID) {
-		sendAPIError(w, api_error_projects_user_not_in, errors.New("user not in that project"), map[string]string{})
+		sendAPIError(w, api_error_project_user_not_in, errors.New("user not in that project"), map[string]string{})
 		return
 	}
 
@@ -364,7 +364,7 @@ func routeAdminGetUserSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !IsUserInProject(userID, projectID) {
-		sendAPIError(w, api_error_projects_user_not_in, errors.New("user not in that project"), map[string]string{})
+		sendAPIError(w, api_error_project_user_not_in, errors.New("user not in that project"), map[string]string{})
 		return
 	}
 
@@ -397,7 +397,7 @@ func routeAdminDeleteUserSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !IsUserInProject(userID, projectID) {
-		sendAPIError(w, api_error_projects_user_not_in, errors.New("user not in that project"), map[string]string{})
+		sendAPIError(w, api_error_project_user_not_in, errors.New("user not in that project"), map[string]string{})
 		return
 	}
 

@@ -198,7 +198,7 @@ func routeAdminGetProjectsForUser(w http.ResponseWriter, r *http.Request) {
 
 	projects, err := GetProjectsForParticipant(userID)
 	if err != nil {
-		sendAPIError(w, api_error_projects_for_user, err, map[string]string{})
+		sendAPIError(w, api_error_project_for_user, err, map[string]string{})
 		return
 	}
 	sendAPIJSONData(w, http.StatusOK, projects)

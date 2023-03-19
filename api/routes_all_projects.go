@@ -311,7 +311,6 @@ func routeAllCreateConsentResponse(w http.ResponseWriter, r *http.Request) {
 	// once saved, link the participant to the project
 	err = LinkUserAndProject(results.User.ID, project.ID)
 	if err != nil {
-		fmt.Printf("\n%+v\n", err)
 		sendAPIError(w, api_error_project_link, err, map[string]string{})
 		return
 	}

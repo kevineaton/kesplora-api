@@ -80,6 +80,7 @@ type BlockFormSubmissionResponse struct {
 	TextResponse string `json:"textResponse" db:"textResponse"`
 	IsCorrect    string `json:"isCorrect" db:"isCorrect"`
 	QuestionText string `json:"questionText" db:"questionText"`
+	QuestionType string `json:"questionType" db:"questionType"`
 }
 
 // BlockFormQestionResponseInput is a helper input for sending many responses at once to the API
@@ -328,10 +329,20 @@ func GetBlockFormSubmissionByID(id int64) (*BlockFormSubmission, error) {
 	return submission, err
 }
 
-// GetBlockFormSubmissionByID gets a specific response
+// GetBlockFormSubmissionByID gets submissions for a user
 func GetBlockFormSubmissionsForUser(userID, blockID int64) ([]BlockFormSubmission, error) {
 	submissions := []BlockFormSubmission{}
 	err := config.DBConnection.Select(&submissions, `SELECT * FROM BlockFormSubmissions WHERE userId = ? AND blockId = ? ORDER BY submittedOn`, userID, blockID)
+	for i := range submissions {
+		submissions[i].processForAPI()
+	}
+	return submissions, err
+}
+
+// GetBlockFormSubmissionsForBlock gets all submissions for a block
+func GetBlockFormSubmissionsForBlock(blockID int64) ([]BlockFormSubmission, error) {
+	submissions := []BlockFormSubmission{}
+	err := config.DBConnection.Select(&submissions, `SELECT * FROM BlockFormSubmissions WHERE blockId = ? ORDER BY submittedOn`, blockID)
 	for i := range submissions {
 		submissions[i].processForAPI()
 	}
@@ -387,10 +398,23 @@ func UpdateBlockFormSubmissionResponse(input *BlockFormSubmissionResponse) error
 	return err
 }
 
+// GetBlockFormSubmissionResponsesForBlock gets all submissions for a block without being tied to a user
+func GetBlockFormSubmissionResponsesForBlock(blockID int64) ([]BlockFormSubmissionResponse, error) {
+	responses := []BlockFormSubmissionResponse{}
+	err := config.DBConnection.Select(&responses, `SELECT r.*, q.id AS questionId, s.id AS submissionId, q.question AS questionText, q.questionType
+	FROM BlockFormSubmissions s, BlockFormSubmissionResponses r, BlockFormQuestions q
+	WHERE s.blockId = ? AND s.id = r.submissionId AND r.questionId = q.id
+	ORDER BY q.formOrder`, blockID)
+	for i := range responses {
+		responses[i].processForAPI()
+	}
+	return responses, err
+}
+
 // GetBlockFormSubmissionResponsesForSubmission gets all of the responses for a submission
 func GetBlockFormSubmissionResponsesForSubmission(submissionID int64) ([]BlockFormSubmissionResponse, error) {
 	responses := []BlockFormSubmissionResponse{}
-	err := config.DBConnection.Select(&responses, `SELECT s.*, q.question AS questionText 
+	err := config.DBConnection.Select(&responses, `SELECT s.*, q.question AS questionText, q.questionType 
 	FROM BlockFormSubmissionResponses s, BlockFormQuestions q 
 	WHERE s.submissionId = ? AND s.questionId = q.id`, submissionID)
 	for i := range responses {
