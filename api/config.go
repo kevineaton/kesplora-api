@@ -12,6 +12,9 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -24,8 +27,10 @@ import (
 var config *apiConfig = nil
 
 const (
-	Yes = "yes"
-	No  = "no"
+	Yes      = "yes"
+	No       = "no"
+	SortASC  = "ASC"
+	SortDESC = "DESC"
 )
 
 type apiConfig struct {
@@ -35,8 +40,12 @@ type apiConfig struct {
 	RootAPIDomain    string
 	JWTSigningString string
 	SiteCode         string // needed if the site is pending and a new install
-	DBConnection     *sqlx.DB
-	CacheClient      *redis.Client
+	APILevel         string // one of all, admin, participant; used to mount routes
+
+	DBConnection *sqlx.DB
+	CacheClient  *redis.Client
+	AWSS3Client  *s3.Client
+	AWSS3Bucket  string
 }
 
 // SetupConfig is a call to configure the basic required configuration options for the API
@@ -52,6 +61,7 @@ func SetupConfig() *apiConfig {
 	config.APIPort = envHelper("KESPLORA_API_API_PORT", "8080")
 	config.RootAPIDomain = envHelper("KESPLORA_DOMAIN", "localhost")
 	config.JWTSigningString = envHelper("KESPLORA_JWT_SIGNING", "")
+	config.APILevel = envHelper("KESPLORA_API_LEVEL", "all")
 
 	config.LogLevelOutput = strings.ToUpper(envHelper("KESPLORA_LOG_LEVEL", "WARN"))
 	log.SetFormatter((&log.JSONFormatter{}))
@@ -128,6 +138,23 @@ func SetupConfig() *apiConfig {
 		}
 	}
 	config.CacheClient.FlushAll().Result()
+
+	// S3
+	s3Access := envHelper("KESPLORA_API_S3_ACCESS", "")
+	s3Secret := envHelper("KESPLORA_API_S3_SECRET", "")
+	s3Bucket := envHelper("KESPLORA_API_S3_BUCKET", "")
+	if s3Access != "" && s3Secret != "" && s3Bucket != "" {
+		// configure the client
+		cfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
+			awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s3Access, s3Secret, "")),
+		)
+		if err != nil {
+			fmt.Printf("\n%+v\n", err)
+		} else {
+			config.AWSS3Client = s3.NewFromConfig(cfg)
+			config.AWSS3Bucket = s3Bucket
+		}
+	}
 
 	return config
 }
@@ -215,71 +242,199 @@ func SetupAPI() *chi.Mux {
 		sendAPIError(w, api_error_not_implemented, errors.New("not implemented"), map[string]string{})
 	}
 
-	// set up the routes
+	// set up the routes applicable to everyone
+	// We don't mirror these in case we wanted duplicated routes (for example /site vs /participant/site vs /admin/site, which could all return different info)
 	r.Get("/", routeApiStatusReady)
 
-	r.Get("/setup", routeGetSiteConfiguration)
-	r.Post("/setup", routeConfigureSite)
+	// sites and unauthed admin routes for setup
+	r.Get("/site", routeAllGetSite)
+	r.Get("/setup", routeAllGetSiteConfiguration)
 
-	// sites
-	r.Get("/site", routeGetSite)
-	r.Patch("/site", routeUpdateSite)
+	// this one is unique as it is un-authed, but mainly for admins
+	r.Post("/setup", routeAllConfigureSite)
+
+	// some project and consent routes are available to everyone
+	r.Get("/projects", routeAllGetProjects)
+	r.Get("/projects/{projectID}", routeAllGetProject)
+	r.Get("/projects/{projectID}/consent", routeAllGetConsentForm)
+	r.Post("/projects/{projectID}/consent/responses", routeAllCreateConsentResponse)
 
 	// users
-	r.Post("/login", routeUserLogin)
-	r.Post("/logout", routeUserLogout)
-	r.Get("/me", routeGetUserProfile)
-	r.Patch("/me", routeUpdateUserProfile)
-	r.Post("/me/refresh", routeUserRefreshAccess)
+	r.Post("/login", routeAllUserLogin)
+	r.Post("/logout", routeAllUserLogout)
+	r.Get("/me", routeAllGetUserProfile)
+	r.Patch("/me", routeAllUpdateUserProfile)
+	r.Post("/me/refresh", routeAllUserRefreshAccess)
 
-	// projects
-	r.Post("/projects", routeCreateProject)
-	r.Get("/projects", routeGetProjects)
-	r.Get("/projects/{projectID}", routeGetProject)
-	r.Patch("/projects/{projectID}", routeUpdateProject)
+	//
+	// Admin Routes
+	//
 
-	// project consent forms
-	r.Post("/projects/{projectID}/consent", routeSaveConsentForm)
-	r.Get("/projects/{projectID}/consent", routeGetConsentForm)
-	r.Delete("/projects/{projectID}/consent", routeDeleteConsentForm)
-	r.Post("/projects/{projectID}/consent/responses", routeCreateConsentResponse)
-	r.Get("/projects/{projectID}/consent/responses", routeGetConsentResponses)
-	r.Get("/projects/{projectID}/consent/responses/{responseID}", routeGetConsentResponse)
-	r.Delete("/projects/{projectID}/consent/responses/{responseID}", routeDeleteConsentResponse)
+	// all of these will automatically check if the user is an admin, so that specific check can be ignored
+	// in the routes, although there is minimal harm as most require the admin user validity and information
+	// anyway
+	if config.APILevel == "all" || config.APILevel == "admin" {
+		r.Route("/admin", func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
+						MustBeAdmin:     true,
+						ShouldSendError: true,
+					})
+					if !results.IsAdmin || !results.IsValid {
+						return
+					}
+					ctx := r.Context()
+					if results.Site != nil {
+						ctx = context.WithValue(r.Context(), appContextSite, results.Site)
+					}
+					next.ServeHTTP(w, r.WithContext(ctx))
+				})
+			})
 
-	// project / users
-	r.Get("/projects/{projectID}/users", notImplementedRoute)
-	r.Post("/projects/{projectID}/users/{userID}", routeLinkUserAndProject) // used for overriding, but should be careful due to consent flows
-	r.Delete("/projects/{projectID}/users/{userID}", routeUnlinkUserAndProject)
+			// site
+			r.Patch("/site", routeAdminUpdateSite)
 
-	// modules, which includes flows
-	r.Post("/modules", routeCreateModule)
-	r.Get("/modules", routeGetAllSiteModules)
-	r.Get("/modules/{moduleID}", routeGetModuleByID)
-	r.Patch("/modules/{moduleID}", routeUpdateModule)
-	r.Delete("/modules/{moduleID}", routeDeleteModule)
+			// users
+			r.Get("/users", routeAdminGetUsersOnPlatform)
+			r.Get("/users/{userID}", routeAdminGetUserOnPlatform)
+			r.Get("/users/{userID}/projects", routeAdminGetProjectsForUser)
+			r.Get("/users/{userID}/projects/{projectID}", routeAdminGetProjectForUser)
+			r.Post("/users/{userID}/projects/{projectID}", routeAdminLinkUserAndProject) // used for overriding, but should be careful due to consent flows
+			r.Delete("/users/{userID}/projects/{projectID}", routeAdminUnlinkUserAndProject)
 
-	// project / module links
-	r.Get("/projects/{projectID}/flow", routeGetModulesOnProject)
-	r.Delete("/projects/{projectID}/flow", routeUnlinkAllModulesFromProject)
-	r.Put("/projects/{projectID}/modules/{moduleID}/order/{order}", routeLinkModuleAndProject)
-	r.Delete("/projects/{projectID}/modules/{moduleID}", routeUnlinkModuleAndProject)
+			// projects
+			r.Post("/projects", routeAdminCreateProject)
+			r.Get("/projects", routeAdminGetProjects)
+			r.Get("/projects/{projectID}", routeAdminGetProject)
+			r.Patch("/projects/{projectID}", routeAdminUpdateProject)
 
-	// blocks
-	r.Get("/blocks", routeGetBlocksOnSite)
-	r.Post("/blocks/{blockType}", routeCreateBlock)
-	r.Get("/blocks/{blockID}", routeGetBlock)
-	r.Patch("/blocks/{blockID}", routeUpdateBlock)
-	r.Delete("/blocks/{blockID}", routeDeleteBlock)
-	r.Get("/modules/{moduleID}/blocks", routeGetBlocksForModule)
-	r.Delete("/modules/{moduleID}/blocks", routeUnlinkAllBlocksFromModule)
-	r.Put("/modules/{moduleID}/blocks/{blockID}/order/{order}", routeLinkBlockAndModule)
-	r.Delete("/modules/{moduleID}/blocks/{blockID}", routeUnlinkBlockAndModule)
+			// project consent forms
+			r.Post("/projects/{projectID}/consent", routeAdminSaveConsentForm)
+			r.Delete("/projects/{projectID}/consent", routeAdminDeleteConsentForm)
+			r.Get("/projects/{projectID}/consent/responses", routeAdminGetConsentResponses)
+			r.Get("/projects/{projectID}/consent/responses/{responseID}", routeAdminGetConsentResponse)
+			r.Delete("/projects/{projectID}/consent/responses/{responseID}", routeAdminDeleteConsentResponse)
 
-	// user / block progress
-	r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
-	r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
+			// project / users; note that the link and unlink are duplicated routes for convenience
+			r.Get("/projects/{projectID}/users", routeAdminGetUsersOnProject)
+			r.Post("/projects/{projectID}/users/{userID}", routeAdminLinkUserAndProject) // used for overriding, but should be careful due to consent flows
+			r.Delete("/projects/{projectID}/users/{userID}", routeAdminUnlinkUserAndProject)
 
+			// modules, which includes flows
+			r.Post("/modules", routeAdminCreateModule)
+			r.Get("/modules", routeAdminGetAllSiteModules)
+			r.Get("/modules/{moduleID}", routeAdminGetModuleByID)
+			r.Patch("/modules/{moduleID}", routeAdminUpdateModule)
+			r.Delete("/modules/{moduleID}", routeAdminDeleteModule)
+
+			// project / module links
+			r.Get("/projects/{projectID}/flow", routeAdminGetModulesOnProject)
+			r.Delete("/projects/{projectID}/flow", routeAdminUnlinkAllModulesFromProject)
+			r.Put("/projects/{projectID}/modules/{moduleID}/order/{order}", routeAdminLinkModuleAndProject)
+			r.Delete("/projects/{projectID}/modules/{moduleID}", routeAdminUnlinkModuleAndProject)
+
+			// blocks
+			r.Get("/blocks", routeAdminGetBlocksOnSite)
+			r.Post("/blocks/{blockType}", routeAdminCreateBlock)
+			r.Get("/blocks/{blockID}", routeAdminGetBlock)
+			r.Patch("/blocks/{blockID}", routeAdminUpdateBlock)
+			r.Delete("/blocks/{blockID}", routeAdminDeleteBlock)
+			r.Get("/modules/{moduleID}/blocks", routeAdminGetBlocksForModule)
+			r.Delete("/modules/{moduleID}/blocks", routeAdminUnlinkAllBlocksFromModule)
+			r.Put("/modules/{moduleID}/blocks/{blockID}/order/{order}", routeAdminLinkBlockAndModule)
+			r.Delete("/modules/{moduleID}/blocks/{blockID}", routeAdminUnlinkBlockAndModule)
+
+			// user / block progress and info
+			r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/status", notImplementedRoute)
+
+			// submissions
+			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions", routeAdminGetUserSubmissions)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions", routeAdminDeleteUserSubmissions)
+			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions/{submissionID}", routeAdminGetUserSubmission)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/users/{userID}/submissions/{submissionID}", routeAdminDeleteUserSubmission)
+
+			// files
+			r.Post("/files", routeAdminUploadFile) // multipart-form
+			r.Get("/files", routeAdminGetFiles)
+			r.Post("/files/{fileID}", routeAdminReplaceFile)
+			r.Delete("/files/{fileID}", routeAdminDeleteFile)
+			r.Patch("/files/{fileID}", routeUpdateFileMetadata)
+			r.Get("/files/{fileID}", routeAdminGetFileMetaData)
+			r.Get("/files/{fileID}/download", routeAdminDownloadFile)
+
+			// notes; NOTE: these are duplicated to allow participants and admins to journal as needed with same routes
+			r.Get("/notes", routeAllGetMyNotes)
+			r.Post("/notes", routeAllCreateNote)
+			r.Get("/notes/{noteID}", routeAllGetMyNoteByID)
+			r.Patch("/notes/{noteID}", routeAllUpdateNoteByID)
+			r.Delete("/notes/{noteID}", routeAllDeleteMyNoteByID)
+
+			// reports
+			r.Get("/reports/projects/{projectID}/status", routeAdminReportGetCountOfUsersOnProjectByStatus)
+			r.Get("/reports/projects/{projectID}/lastUpdatedOn", routeAdminReportGetCountOfLastUpdatedForProject)
+			r.Get("/reports/projects/{projectID}/flow/status", routeAdminReportGetCountOfStatusForProject)
+			r.Get("/reports/projects/{projectID}/flow/submissions", routeAdminReportGetSubmissionCountForProject)
+			r.Get("/reports/projects/{projectID}/flow/modules/{moduleID}/blocks/{blockID}/submissions", routeAdminReportGetProjectSubmissionResponses)
+			r.Get("/reports/projects/{projectID}/flow/modules/{moduleID}/blocks/{blockID}/submissions/export", routeAdminReportExportProjectSubmissionResponses)
+
+		})
+	}
+
+	if config.APILevel == "all" || config.APILevel == "participant" {
+		r.Route("/participant", func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					results := checkRoutePermissions(w, r, &routePermissionsCheckOptions{
+						ShouldSendError:   true,
+						MustBeParticipant: true,
+					})
+					if !results.IsValid {
+						return
+					}
+					ctx := r.Context()
+					if results.Site != nil {
+						ctx = context.WithValue(r.Context(), appContextSite, results.Site)
+					}
+					next.ServeHTTP(w, r.WithContext(ctx))
+				})
+			})
+
+			// projects
+			r.Get("/projects", routeParticipantGetProjects)
+			r.Delete("/projects/{projectID}", routeParticipantUnlinkUserAndProject)
+			r.Get("/projects/{projectID}", routeParticipantGetProject)
+			r.Get("/projects/{projectID}/flow", routeParticipantGetProjectFlow)
+			r.Get("/projects/{projectID}/consent/responses/{responseID}", routeParticipantGetConsentResponse)
+			r.Delete("/projects/{projectID}/consent/responses/{responseID}", routeParticipantDeleteConsentResponse)
+
+			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}", routeParticipantGetBlock)
+			r.Put("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/status/{status}", routeParticipantSaveBlockStatus)
+
+			// special form routes
+			r.Post("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantSaveFormResponse)
+			r.Get("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantGetFormSubmissions)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions", routeParticipantDeleteSubmissions)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/submissions/{submissionID}", routeParticipantDeleteSubmission)
+
+			// participant's can reset their status
+			r.Delete("/projects/{projectID}/modules/{moduleID}/blocks/{blockID}/status", routeParticipantRemoveBlockStatus)
+			r.Delete("/projects/{projectID}/modules/{moduleID}/status", routeParticipantRemoveBlockStatus)
+			r.Delete("/projects/{projectID}/status", routeParticipantRemoveBlockStatus)
+
+			// files
+			r.Get("/files/{fileID}", routeParticipantGetFileMetaData)
+			r.Get("/files/{fileID}/download", routeParticipantDownloadFile)
+
+			// notes; NOTE: these are duplicated to allow participants and admins to journal as needed with same routes
+			r.Get("/notes", routeAllGetMyNotes)
+			r.Post("/notes", routeAllCreateNote)
+			r.Get("/notes/{noteID}", routeAllGetMyNoteByID)
+			r.Patch("/notes/{noteID}", routeAllUpdateNoteByID)
+			r.Delete("/notes/{noteID}", routeAllDeleteMyNoteByID)
+		})
+	}
 	return r
 }
 
@@ -315,6 +470,8 @@ func CheckConfiguration() {
 	if config.JWTSigningString == "" {
 		// probably a bad day, but we won't block it; we will want to output it, especially in multi-host installs
 		config.JWTSigningString = randomString(32)
+		// to avoid issues with things like terminal prompts, replace !
+		config.JWTSigningString = strings.ReplaceAll(config.JWTSigningString, "!", "0")
 		fmt.Println("")
 		fmt.Printf("-------------------------------------------------------------------\n")
 		fmt.Printf("-- JWT Signing Key Generated: %s   --\n", config.JWTSigningString)

@@ -14,20 +14,30 @@ type Block struct {
 	BlockType    string      `json:"blockType" db:"blockType"`
 	Content      interface{} `json:"content,omitempty"`
 	FoundInFlows int64       `json:"foundInFlows" db:"foundInFlows"`
+	AllowReset   string      `json:"allowReset" db:"allowReset"`
+
+	UserStatus    string `json:"userStatus,omitempty" db:"userStatus"`
+	LastUpdatedOn string `json:"lastUpdatedOn,omitempty" db:"lastUpdatedOn"`
+	ProjectID     int64  `json:"projectId,omitempty" db:"projectId"`
+	ProjectName   string `json:"projectName,omitempty" db:"projectName"`
+	ModuleID      int64  `json:"moduleId,omitempty" db:"moduleId"`
+	ModuleName    string `json:"moduleName,omitempty" db:"moduleName"`
 }
 
 const (
-	BlockTypeExternal     = "external"
-	BlockTypePresentation = "presentation"
-	BlockTypeSurvey       = "survey"
-	BlockTypeText         = "text"
+	BlockTypeExternal = "external"
+	BlockTypeEmbed    = "embed"
+	BlockTypeForm     = "form"
+	BlockTypeText     = "text"
+	BlockTypeFile     = "file"
 )
 
 var blockTypes = []string{
 	BlockTypeExternal,
-	BlockTypePresentation,
-	BlockTypeSurvey,
+	BlockTypeEmbed,
+	BlockTypeForm,
 	BlockTypeText,
+	BlockTypeFile,
 }
 
 func isValidBlockType(search string) bool {
@@ -43,7 +53,7 @@ func isValidBlockType(search string) bool {
 func CreateBlock(input *Block) error {
 	input.processForDB()
 	defer input.processForAPI()
-	res, err := config.DBConnection.NamedExec(`INSERT INTO Blocks SET name = :name, summary = :summary, blockType = :blockType`, input)
+	res, err := config.DBConnection.NamedExec(`INSERT INTO Blocks SET name = :name, summary = :summary, blockType = :blockType, allowReset = :allowReset`, input)
 	if err != nil {
 		return err
 	}
@@ -77,11 +87,35 @@ func GetBlockByID(blockID int64) (*Block, error) {
 	return block, err
 }
 
+// GetModuleBlockForParticipant gets a single block for a participant; we take in all three levels to
+// ensure that the permissions are correct
+func GetModuleBlockForParticipant(participantID, projectID, moduleID, blockID int64) (*Block, error) {
+	block := &Block{}
+	defer block.processForAPI()
+	err := config.DBConnection.Get(block, `SELECT b.*, 
+	p.id AS projectId,
+	p.name AS projectName,
+	m.id AS moduleId,
+	m.name AS moduleName,
+	IFNULL(bus.status, 'not_started') AS userStatus,
+	IFNULL(bus.lastUpdatedOn, NOW()) AS lastUpdatedOn
+	FROM Blocks b, BlockModuleFlows bmf, Flows f, Modules m, Projects p
+	LEFT JOIN BlockUserStatus bus ON bus.userId = ? AND bus.blockId = ?
+	WHERE b.id = ? AND
+	b.id = bmf.blockId AND
+	bmf.moduleId = ? AND
+	bmf.moduleId = f.moduleId AND
+	f.projectId = ? AND
+	f.projectId = p.id AND
+	f.moduleId = m.id`, participantID, blockID, blockID, moduleID, projectID)
+	return block, err
+}
+
 // UpdateBlock updates a block
 func UpdateBlock(input *Block) error {
 	input.processForDB()
 	defer input.processForAPI()
-	_, err := config.DBConnection.NamedExec(`UPDATE Blocks SET name = :name, blockType = :blockType, summary = :summary WHERE id = :id`, input)
+	_, err := config.DBConnection.NamedExec(`UPDATE Blocks SET name = :name, blockType = :blockType, summary = :summary, allowReset = :allowReset WHERE id = :id`, input)
 	return err
 }
 
@@ -144,16 +178,28 @@ func handleBlockRequiredFields(blockType string, rawData interface{}) error {
 		if err != nil || content.ExternalLink == "" {
 			return errors.New("invalid")
 		}
-	case BlockTypePresentation:
-		content := &BlockPresentation{}
+	case BlockTypeEmbed:
+		content := &BlockEmbed{}
 		err := json.Unmarshal(str, content)
-		if err != nil || content.EmbedLink == "" {
+		if err != nil || (content.EmbedLink == "" && content.FileID == 0) {
 			return errors.New("invalid")
 		}
 	case BlockTypeText:
 		content := &BlockText{}
 		err := json.Unmarshal(str, content)
 		if err != nil || content.Text == "" {
+			return errors.New("invalid")
+		}
+	case BlockTypeForm:
+		content := &BlockForm{}
+		err := json.Unmarshal(str, content)
+		if err != nil || content.Questions == nil || len(content.Questions) == 0 {
+			return errors.New("invalid")
+		}
+	case BlockTypeFile:
+		content := &BlockFile{}
+		err := json.Unmarshal(str, content)
+		if err != nil || content.FileID == 0 {
 			return errors.New("invalid")
 		}
 	default:
@@ -164,6 +210,7 @@ func handleBlockRequiredFields(blockType string, rawData interface{}) error {
 
 // handleBlockSave is a helper for creating and updating block content types
 func handleBlockSave(blockType string, blockID int64, rawData interface{}) (interface{}, error) {
+	// since the content comes in as an interface, we have to unmarshal and THEN set the block id!
 	str, _ := json.Marshal(rawData)
 	switch blockType {
 	case BlockTypeExternal:
@@ -175,17 +222,24 @@ func handleBlockSave(blockType string, blockID int64, rawData interface{}) (inte
 		content.BlockID = blockID
 		err = SaveBlockExternal(content)
 		return content, err
-	case BlockTypePresentation:
-		content := &BlockPresentation{}
+	case BlockTypeEmbed:
+		content := &BlockEmbed{}
 		err := json.Unmarshal(str, content)
 		if err != nil {
 			return content, errors.New("could not convert")
 		}
 		content.BlockID = blockID
-		err = SaveBlockPresentation(content)
+		err = SaveBlockEmbed(content)
 		return content, err
-	case BlockTypeSurvey:
-		return rawData, errors.New("not implemented")
+	case BlockTypeForm:
+		content := &BlockForm{}
+		err := json.Unmarshal(str, content)
+		if err != nil {
+			return content, errors.New("could not convert")
+		}
+		content.BlockID = blockID
+		err = HandleSaveBlockForm(content)
+		return content, err
 	case BlockTypeText:
 		content := &BlockText{}
 		err := json.Unmarshal(str, content)
@@ -194,6 +248,20 @@ func handleBlockSave(blockType string, blockID int64, rawData interface{}) (inte
 		}
 		content.BlockID = blockID
 		err = SaveBlockText(content)
+		return content, err
+	case BlockTypeFile:
+		content := &BlockFile{}
+		err := json.Unmarshal(str, content)
+		if err != nil {
+			return content, errors.New("could not convert")
+		}
+		content.BlockID = blockID
+		// we want to make sure the file is available
+		err = UpdateFileVisibilityFromAdminOnly(content.FileID, FileVisibilityProject)
+		if err != nil {
+			return content, err
+		}
+		err = SaveBlockFile(content)
 		return content, err
 	}
 	return rawData, errors.New("unsupported type")
@@ -205,13 +273,25 @@ func handleBlockGet(blockType string, blockID int64) (interface{}, error) {
 	case BlockTypeExternal:
 		found, err := GetBlockExternalByBlockID(blockID)
 		return found, err
-	case BlockTypePresentation:
-		found, err := GetBlockPresentationByBlockID(blockID)
+	case BlockTypeEmbed:
+		found, err := GetBlockEmbedByBlockID(blockID)
 		return found, err
-	case BlockTypeSurvey:
-		return map[string]string{}, errors.New("not implemented")
+	case BlockTypeForm:
+		found, err := GetBlockFormByBlockID(blockID)
+		if err != nil {
+			return found, err
+		}
+		questions, err := GetBlockFormQuestionsForBlockID(blockID)
+		if err != nil {
+			return found, err
+		}
+		found.Questions = questions
+		return found, err
 	case BlockTypeText:
 		found, err := GetBlockTextByBlockID(blockID)
+		return found, err
+	case BlockTypeFile:
+		found, err := GetBlockFileByBlockID(blockID)
 		return found, err
 	}
 	return map[string]string{}, errors.New("unsupported type")
@@ -223,13 +303,17 @@ func handleBlockDelete(blockType string, blockID int64) error {
 	case BlockTypeExternal:
 		err := DeleteBlockExternalByBlockID(blockID)
 		return err
-	case BlockTypePresentation:
-		err := DeleteBlockPresentationByBlockID(blockID)
+	case BlockTypeEmbed:
+		err := DeleteBlockEmbedByBlockID(blockID)
 		return err
-	case BlockTypeSurvey:
-		return errors.New("not implemented")
+	case BlockTypeForm:
+		err := DeleteBlockFormByBlockID(blockID)
+		return err
 	case BlockTypeText:
 		err := DeleteBlockTextByBlockID(blockID)
+		return err
+	case BlockTypeFile:
+		err := DeleteBlockFileByBlockID(blockID)
 		return err
 	}
 	return errors.New("unsupported type")
@@ -239,11 +323,17 @@ func (input *Block) processForDB() {
 	if input.BlockType == "" {
 		input.BlockType = BlockTypeText
 	}
+	if input.AllowReset == "" {
+		input.AllowReset = Yes
+	}
 }
 
 func (input *Block) processForAPI() {
 	if input.Content == nil {
 		input.Content = map[string]string{}
+	}
+	if input.LastUpdatedOn != "" {
+		input.LastUpdatedOn, _ = parseTimeToTimeFormat(input.LastUpdatedOn, timeFormatAPI)
 	}
 }
 

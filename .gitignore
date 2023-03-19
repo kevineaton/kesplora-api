@@ -14,5 +14,7 @@
 kesplora-api
 .task/
 .vscode/
+_notes
+_test.txt
 
 coverage.html

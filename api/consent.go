@@ -19,7 +19,7 @@ type ConsentForm struct {
 type ConsentResponse struct {
 	ID                                    int64  `json:"id" db:"id"`
 	ProjectID                             int64  `json:"projectId" db:"projectId"`
-	DateConsented                         string `json:"dateConsented" db:"dateConsented"`
+	SubmittedOn                           string `json:"submittedOn" db:"submittedOn"`
 	ConsentStatus                         string `json:"consentStatus" db:"consentStatus"`
 	ParticipantComments                   string `json:"participantComments" db:"participantComments"`
 	ResearcherComments                    string `json:"researcherComments" db:"researcherComments"`
@@ -29,6 +29,10 @@ type ConsentResponse struct {
 	ParticipantID                         int64  `json:"participantId" db:"participantId"` // will be 0 if the project specifies to not link them
 
 	ProjectCode string `json:"projectCode,omitempty"` // used for signup when the project needs a code
+
+	// these are used when the project must be anonymous, so a new account is created during consent
+	// and tied to a participant code
+	User *User `json:"user"`
 }
 
 const (
@@ -82,7 +86,7 @@ func CreateConsentResponse(input *ConsentResponse) error {
 	defer input.processForAPI()
 	res, err := config.DBConnection.NamedExec(`INSERT INTO ConsentResponses SET 
 		projectId = :projectId,
-		dateConsented = :dateConsented,
+		submittedOn = :submittedOn,
 		consentStatus = :consentStatus,
 		participantComments = :participantComments,
 		researcherComments = :researcherComments,
@@ -101,7 +105,7 @@ func CreateConsentResponse(input *ConsentResponse) error {
 func GetConsentResponsesForProject(projectID int64) ([]ConsentResponse, error) {
 	data := []ConsentResponse{}
 	err := config.DBConnection.Select(&data, `SELECT cr.* FROM ConsentResponses cr 
-		WHERE cr.projectId = ? ORDER BY cr.dateConsented`, projectID)
+		WHERE cr.projectId = ? ORDER BY cr.submittedOn`, projectID)
 	for i := range data {
 		data[i].processForAPI()
 	}
@@ -146,10 +150,10 @@ func (input *ConsentForm) processForAPI() {
 }
 
 func (input *ConsentResponse) processForDB() {
-	if input.DateConsented == "" {
-		input.DateConsented = time.Now().Format(timeFormatDB)
+	if input.SubmittedOn == "" {
+		input.SubmittedOn = time.Now().Format(timeFormatDB)
 	} else {
-		input.DateConsented, _ = parseTimeToTimeFormat(input.DateConsented, timeFormatDB)
+		input.SubmittedOn, _ = parseTimeToTimeFormat(input.SubmittedOn, timeFormatDB)
 	}
 	if input.ConsentStatus == "" {
 		input.ConsentStatus = ConsentResponseStatusDeclined // don't auto accept
@@ -157,7 +161,7 @@ func (input *ConsentResponse) processForDB() {
 }
 
 func (input *ConsentResponse) processForAPI() {
-	input.DateConsented, _ = parseTimeToTimeFormat(input.DateConsented, timeFormatAPI)
+	input.SubmittedOn, _ = parseTimeToTimeFormat(input.SubmittedOn, timeFormatAPI)
 	input.ProjectCode = ""
 }
 

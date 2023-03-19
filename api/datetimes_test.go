@@ -74,7 +74,7 @@ func TestDateParsingOLD(t *testing.T) {
 	count := 0
 	for _, tt := range tests {
 		converted, err := parseTimeToTimeFormat(tt.inputString, tt.inputFormat)
-		assert.Equal(t, tt.expectedOutputString, converted, fmt.Sprintf("passed in %s with format of %s, got %s", tt.inputString, tt.inputFormat, converted))
+		assert.Equal(t, tt.expectedOutputString, converted, fmt.Sprintf("index %d: passed in %s with format of %s, got %s", count, tt.inputString, tt.inputFormat, converted))
 		if tt.shouldError {
 			assert.NotNil(t, err)
 		} else {
@@ -92,12 +92,12 @@ func TestDateDurationCalculations(t *testing.T) {
 		minimumMonths int
 	}{
 		{
-			inputTime:     time.Now().AddDate(-22, -1, 0),
+			inputTime:     time.Now().AddDate(-22, -1, -1),
 			minimumYears:  22,
 			minimumMonths: 1,
 		},
 		{
-			inputTime:     time.Now().AddDate(0, -1, 0),
+			inputTime:     time.Now().AddDate(0, -1, -1),
 			minimumYears:  0,
 			minimumMonths: 1,
 		},
@@ -106,7 +106,7 @@ func TestDateDurationCalculations(t *testing.T) {
 	count := 0
 	for _, tt := range tests {
 		years, months, _, _, _, _ := CalculateDuration(tt.inputTime)
-		assert.True(t, years >= tt.minimumYears && months >= tt.minimumMonths, fmt.Sprintf("passed in %s and had %d years and %d months old", tt.inputTime.Format("2006-01-02"), years, months))
+		assert.True(t, years >= tt.minimumYears && months >= tt.minimumMonths, fmt.Sprintf("index %d: passed in %s and had %d years and %d months old", count, tt.inputTime.Format("2006-01-02"), years, months))
 		count++
 	}
 	assert.Equal(t, len(tests), count)

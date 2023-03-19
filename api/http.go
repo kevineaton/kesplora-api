@@ -6,8 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 )
 
 // avoid collisions with other keys that may enter the context
@@ -21,6 +24,9 @@ const appContextKeyFound key = "found"
 
 // AppContextKeyExpired is the expired key
 const appContextKeyExpired key = "expired"
+
+// appContextSite is the key for the site
+const appContextSite key = "site"
 
 // apiReturn is the primary return shape for JSON-based returns; depending if it's an error or a success, the
 // actual JSON fields may differ
@@ -57,6 +63,13 @@ func sendAPIJSONData(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
+// sendAPIFileData sends a file's binary data
+func sendAPIFileData(w http.ResponseWriter, code int, contentType string, payload []byte) {
+	w.WriteHeader(code)
+	w.Header().Set("Content-Type", contentType)
+	w.Write(payload)
+}
+
 // sendAPIError sends a JSON object for an API error; note that the systemError is not sent back
 // to the client, so it is generally safe for system-level messaging; can be piped to error logs
 func sendAPIError(w http.ResponseWriter, key string, systemError error, data interface{}) {
@@ -82,6 +95,7 @@ func sendAPIError(w http.ResponseWriter, key string, systemError error, data int
 	})
 }
 
+// checkRoutePermissions is a helper to check the various security permissions for a route
 func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *routePermissionsCheckOptions) *routePermissionsCheckResults {
 	results := &routePermissionsCheckResults{}
 	// first, check if the site is active
@@ -161,6 +175,18 @@ func checkRoutePermissions(w http.ResponseWriter, r *http.Request, options *rout
 	return results
 }
 
+// getUserFromHTTPContext is a helper to get the user id from the context; this is
+// useful for getting the user after the automated checks have been run but we don't
+// want to call the check again
+func getUserFromHTTPContext(r *http.Request) (*jwtUser, error) {
+	user, userOK := r.Context().Value(appContextKeyUser).(jwtUser)
+	if !userOK {
+		return nil, errors.New("invalid user")
+	}
+	return &user, nil
+}
+
+// testEndpoint calls a route in the API for testing purposes
 func testEndpoint(method string, endpoint string, data io.Reader, handler http.HandlerFunc, accessToken string) (code int, body *bytes.Buffer, err error) {
 	req, err := http.NewRequest(method, endpoint, data)
 	if err != nil {
@@ -175,6 +201,27 @@ func testEndpoint(method string, endpoint string, data io.Reader, handler http.H
 	return rr.Code, rr.Body, nil
 }
 
+func testEndpointUpload(endpoint string, fileName string, data io.Reader, handler http.HandlerFunc, accessToken string) (code int, body *bytes.Buffer, err error) {
+	b := &bytes.Buffer{}
+	writer := multipart.NewWriter(b)
+	part, _ := writer.CreateFormFile("file", fileName)
+	io.Copy(part, data)
+	writer.Close()
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, b)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
+	}
+
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	req.Header.Add("Authorization", "Bearer: "+accessToken)
+	rr := httptest.NewRecorder()
+	chi := SetupAPI()
+	chi.ServeHTTP(rr, req)
+	return rr.Code, rr.Body, nil
+}
+
+// testEndpointResultToMap converts the buffer from testEndpoint to a map which can then be converted into a struct if needed
 func testEndpointResultToMap(bu *bytes.Buffer) (map[string]interface{}, error) {
 	m := map[string]interface{}{}
 	err := json.Unmarshal(bu.Bytes(), &m)
@@ -182,9 +229,63 @@ func testEndpointResultToMap(bu *bytes.Buffer) (map[string]interface{}, error) {
 	return mm, err
 }
 
+// testEndpointResultToSlice converts the buffer from testEndpoint to a slice of maps which can then be converted into a struct if needed
 func testEndpointResultToSlice(bu *bytes.Buffer) ([]interface{}, error) {
 	m := map[string]interface{}{}
 	err := json.Unmarshal(bu.Bytes(), &m)
 	mm := m["data"].([]interface{})
 	return mm, err
+}
+
+// processQuery searches for common query string parameters
+type commonQueryParams struct {
+	Start     string
+	End       string
+	Count     int64
+	Offset    int64
+	SortField string
+	SortDir   string
+}
+
+func processQuery(r *http.Request) commonQueryParams {
+	params := commonQueryParams{}
+
+	startQ := r.URL.Query().Get("start")
+	endQ := r.URL.Query().Get("end")
+	countQ := r.URL.Query().Get("count")
+	offsetQ := r.URL.Query().Get("offset")
+	sortDirQ := r.URL.Query().Get("sortDir")
+	sortField := r.URL.Query().Get("sort")
+
+	start, err := parseTimeToTimeFormat(startQ, timeFormatAPI)
+	if err != nil {
+		start = "2017-01-01T00:00:00Z"
+	}
+	params.Start = start
+
+	end, err := parseTimeToTimeFormat(endQ, timeFormatAPI)
+	if err != nil {
+		end = "2080-01-01 00:00:00" // TODO: fix in 2079
+	}
+	params.End = end
+
+	count, err := strconv.ParseInt(countQ, 10, 64)
+	if err != nil {
+		count = 500 // get a lot
+	}
+	params.Count = count
+
+	offset, err := strconv.ParseInt(offsetQ, 10, 64)
+	if err != nil {
+		offset = 0
+	}
+	params.Offset = offset
+
+	sortDir := strings.ToUpper(sortDirQ)
+	if sortDir != "ASC" && sortDir != "DESC" {
+		sortDir = "DESC"
+	}
+	params.SortDir = sortDir
+	params.SortField = sortField
+	return params
 }

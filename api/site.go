@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 )
@@ -46,6 +48,20 @@ func GetSite() (*Site, error) {
 	if err == nil {
 		cacheData, _ := json.Marshal(site)
 		_, err = config.CacheClient.Set(getSiteCacheKey(), string(cacheData), siteCacheMinutes*time.Minute).Result()
+	}
+	return site, err
+}
+
+// GetSiteFromContext is a helper to try to get the site from the context and, if it's not there,
+// get it from the Cache or DB
+func GetSiteFromContext(ctx context.Context) (*Site, error) {
+	if ctx == nil {
+		return nil, errors.New("nil context")
+	}
+	var err error
+	site, siteOK := ctx.Value(appContextSite).(*Site)
+	if !siteOK {
+		site, err = GetSite()
 	}
 	return site, err
 }
@@ -112,14 +128,17 @@ func UpdateSite(input *Site) error {
 	return err
 }
 
-// deleteSiteBy deletes a site and really should only be used for testing purposes; if you
-// want to make a site unavailable, it's better to mark it as disabled
-func deleteSite() error {
-	_, err := config.DBConnection.Exec(`DELETE FROM Site`)
+// DeleteSiteByID deletes a site. WARNING: Think REALLY HARD before calling this, as the ramifications could be...
+// difficult. It would be better to just drop the database if you are intentionally trying to delete a site and
+// its data
+func DeleteSiteByID(siteID int64) error {
+	// this is incredibly dangerous and should only be used in tests
+	// especially since we don't clean up any modules or anything
+	_, err := config.DBConnection.Exec("DELETE FROM Site WHERE id = ?", siteID)
 	if err != nil {
 		return err
 	}
-	// as other models are built out, we need to delete them; this is effectively, in this initial version, a DB wipe
+	_, err = config.CacheClient.Del(getSiteCacheKey()).Result()
 	return err
 }
 

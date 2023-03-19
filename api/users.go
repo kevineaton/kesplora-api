@@ -39,9 +39,14 @@ type User struct {
 	SystemRole      string `json:"systemRole" db:"systemRole"`
 	CreatedOn       string `json:"createdOn" db:"createdOn"`
 	LastLoginOn     string `json:"lastLoginOn" db:"lastLoginOn"`
-	Access          string `json:"access"`
-	Refresh         string `json:"refresh"` // web clients should not store this in local storage and should instead use the cookies!
-	Expires         string `json:"expires"`
+	Access          string `json:"access,omitempty"`
+	Refresh         string `json:"refresh,omitempty"` // web clients should not store this in local storage and should instead use the cookies!
+	Expires         string `json:"expires,omitempty"`
+
+	// these are used for the admin reports
+	ProjectCount  int64     `json:"projectCount,omitempty" db:"projectCount"`
+	Projects      []Project `json:"projects,omitempty" db:"projects"`
+	ProjectStatus string    `json:"projectStatus,omitempty" db:"projectStatus"`
 }
 
 // CreateUser creates a new user in the db
@@ -117,7 +122,24 @@ func GetUserByParticipantCode(participantCode string) (*User, error) {
 // GetAllUsersOnPlatform gets all the users on the platform
 func GetAllUsersOnPlatform() ([]User, error) {
 	users := []User{}
-	err := config.DBConnection.Select(&users, `SELECT * FROM Users`)
+	err := config.DBConnection.Select(&users, `SELECT u.*,
+	(SELECT COUNT(*) FROM ProjectUserLinks p WHERE p.userId = u.id) AS projectCount
+	FROM Users u
+	ORDER BY u.lastName, u.firstName, u.participantCode`)
+	for i := range users {
+		users[i].processForAPI()
+	}
+	return users, err
+}
+
+// GetAllUsersInProject gets all the users in a project along with their status
+func GetAllUsersInProject(projectID int64) ([]User, error) {
+	users := []User{}
+	err := config.DBConnection.Select(&users, `SELECT u.*, p.status AS projectStatus
+	FROM Users u
+	LEFT JOIN ProjectUserLinks p ON u.id = p.userId
+	WHERE p.projectId = ?
+	ORDER BY u.lastName, u.firstName, u.participantCode`, projectID)
 	for i := range users {
 		users[i].processForAPI()
 	}
@@ -181,10 +203,10 @@ func createTestUser(defaults *User) error {
 		defaults.Password = fmt.Sprintf("test_P@%d!!", rand.Int63n(99999999999999))
 	}
 	if defaults.FirstName == "" {
-		defaults.FirstName = "Admin"
+		defaults.FirstName = "User"
 	}
 	if defaults.LastName == "" {
-		defaults.LastName = "Admin"
+		defaults.LastName = "User"
 	}
 	if defaults.Email == "" {
 		defaults.Email = fmt.Sprintf("test_%d@kesplora.com", rand.Int63n(99999999999999))
@@ -273,7 +295,6 @@ func parseJWT(input string) (jwtUser, error) {
 		u := claims.User
 		return u, nil
 	}
-	fmt.Printf("\n\t\t2: %+v\n", err)
 	return jwtUser{}, errors.New("could not parse jwt")
 }
 
