@@ -48,11 +48,18 @@ Once configured, the primary grouping of "stuff" is a `Project`. A `Project` is 
 
 A `Project` is configured with `Flows` that connect `Modules`. A `Module` consists of `Blocks`. A `Block` is something that a `Participant` will do in a research study. Initially, this will include:
 
-- `Sign Up` for post-consent `Participant` access creation
-- `Survey` to gather responses
-- `Presentation` for either `Video`, `PDF`, `Download`, or `External` resources the `Participant` will complete.
+- `Consent` forms for sign up and management
+- `Modules`
+- `Blocks`, which currently include:
+  - `Text` - Just textual information
+  - `Embed` - Embedded files, such as `PDF`s or `Youtube` videos
+  - `External` - Links to external sources
+  - `File` - A downloadable file
+  - `Form` - A form for collectable information, such as surveys and tracking
+- `Notes` such as Journal entries or block notes. Participants and Admins can use this to record thoughts or really anything.
+- `Reports` for administrators to be able to analyze data, such as participant progress and `Form` responses
 
-Since `Consent` is critical, it exists separate from a `Module`. The consent will be linked directly to a `Project` and must be provided prior to access to the `Project`.
+Since `Consent` is critical, it exists separate from a `Block`. The consent will be linked directly to a `Project` and must be provided prior to access to the `Project`.
 
 So, for example, you could have a theoretical `Project` that wants to measure data retention on a topic. Your `Project` could have the following `Flow`:
 
@@ -100,10 +107,6 @@ Structs should have both `json` and `db` tags. At the bottom of every struct, th
 We are still very early in development. If a struct or file has minimal code, it has not been fully thought out and is a place holder. Aside from functionality, there's a few non-functionality improvements:
 
 [ ] Integrate an email system that can use Mailgun at the least (but in a way that supports others?)
-
-[ ] Integrate AWS S3 backend for file uploads
-
-[ ] Add Redis and cache the site status on calls
 
 [ ] Add Open API Specification 3 files to document the API
 
