@@ -58,7 +58,7 @@ func SetupConfig() *apiConfig {
 
 	config = &apiConfig{}
 	config.Environment = envHelper("KESPLORA_ENVIRONMENT", "test")
-	config.APIPort = envHelper("KESPLORA_API_API_PORT", "8080")
+	config.APIPort = envHelper("KESPLORA_API_PORT", "8080")
 	config.RootAPIDomain = envHelper("KESPLORA_DOMAIN", "localhost")
 	config.JWTSigningString = envHelper("KESPLORA_JWT_SIGNING", "")
 	config.APILevel = envHelper("KESPLORA_API_LEVEL", "all")
@@ -143,6 +143,7 @@ func SetupConfig() *apiConfig {
 	s3Access := envHelper("KESPLORA_API_S3_ACCESS", "")
 	s3Secret := envHelper("KESPLORA_API_S3_SECRET", "")
 	s3Bucket := envHelper("KESPLORA_API_S3_BUCKET", "")
+	s3Region := envHelper("KESPLORA_API_S3_REGION", "us-east-1")
 	if s3Access != "" && s3Secret != "" && s3Bucket != "" {
 		// configure the client
 		cfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
@@ -151,6 +152,7 @@ func SetupConfig() *apiConfig {
 		if err != nil {
 			fmt.Printf("\n%+v\n", err)
 		} else {
+			cfg.Region = s3Region
 			config.AWSS3Client = s3.NewFromConfig(cfg)
 			config.AWSS3Bucket = s3Bucket
 		}

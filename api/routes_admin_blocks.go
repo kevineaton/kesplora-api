@@ -66,6 +66,17 @@ func routeAdminGetBlocksOnSite(w http.ResponseWriter, r *http.Request) {
 		sendAPIError(w, api_error_block_not_found, err, map[string]interface{}{})
 		return
 	}
+	// for files and embeds, we actually need the content due to the UI that requires
+	// showing the embed type; this would be important to cache to not hit the DB too hard
+	// TODO: put caching on the blocks list, which would need invalidation on block CUD
+	for i := range blocks {
+		if blocks[i].BlockType == BlockTypeEmbed || blocks[i].BlockType == BlockTypeFile {
+			content, err := handleBlockGet(blocks[i].BlockType, blocks[i].ID)
+			if err == nil {
+				blocks[i].Content = content
+			}
+		}
+	}
 	sendAPIJSONData(w, http.StatusOK, blocks)
 }
 

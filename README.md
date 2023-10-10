@@ -15,7 +15,7 @@ Very early stages. Structs, funcs, flows, and APIs will all change. Do not use t
 Most configuration is handled through the `Config.go` file reading from the environment. Of note, the following values deserve explanation:
 
 - `KESPLORA_ENVIRONMENT` (`test`): One of `test`, `dev`, or `production`. Currently has no impact on the business logic.
-- `KESPLORA_API_API_PORT` (`8080`): The port for the HTTP server to listen on. This is usually served behind proxy, such as nginx, that handles SSL termination
+- `KESPLORA_API_PORT` (`8080`): The port for the HTTP server to listen on. This is usually served behind proxy, such as nginx, that handles SSL termination
 - `KESPLORA_DOMAIN` (`localhost`): The domain the HTTP server listens on. Used for things like HTTP Cookie scoping
 - `KESPLORA_JWT_SIGNING` (`will be randomly generated`): The signing key to use for JWT encryption. Will be randomly generated if not provided. This should be consistent across similar deployments.
 - `KESPLORA_API_LEVEL` (`all`): One of `all`, `admin`, or `participant`. Which API routes to serve. Useful if you want to restrict the admin routes behind different VPC or firewalls.
@@ -25,6 +25,7 @@ Most configuration is handled through the `Config.go` file reading from the envi
 - `KESPLORA_API_S3_ACCESS` (``): The S3 access token
 - `KESPLORA_API_S3_SECRET` (``): The S3 secret token
 - `KESPLORA_API_S3_BUCKET` (``): The S3 bucket
+- `KESPLORA_API_S3_REGION` (`us-east-1`): The S3 region
 
 ## Set Up
 
