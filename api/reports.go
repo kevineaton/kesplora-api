@@ -72,8 +72,7 @@ func ReportGetCountOfLastUpdatedForProject(projectID int64) ([]ReportUserLastUpd
 	err := config.DBConnection.Select(&results, `SELECT DATEDIFF(NOW(), bs.lastUpdatedOn) AS daysAgo, bs.userId
 	FROM BlockUserStatus bs
 	WHERE bs.projectId = ?
-	GROUP BY bs.userId
-	ORDER BY lastUpdatedOn`, projectID)
+	ORDER BY daysAgo`, projectID)
 	return results, err
 }
 
@@ -81,16 +80,16 @@ func ReportGetCountOfLastUpdatedForProject(projectID int64) ([]ReportUserLastUpd
 func ReportGetCountOfStatusForProject(projectID int64) ([]ReportBlockStatusCount, error) {
 	results := []ReportBlockStatusCount{}
 	err := config.DBConnection.Select(&results, `SELECT m.id AS moduleId, m.name AS moduleName, b.id AS blockId, b.name AS blockName, 
-	(SELECT COUNT(*) FROM BlockUserStatus bs WHERE bs.projectId = 1 AND bs.moduleId = m.id AND bs.blockId = b.id AND bs.status = 'completed' ) AS completedCount,
-	(SELECT COUNT(*) FROM BlockUserStatus bs WHERE bs.projectId = 1 AND bs.moduleId = m.id AND bs.blockId = b.id AND bs.status = 'not_started' ) AS notStartedCount,
-	(SELECT COUNT(*) FROM BlockUserStatus bs WHERE bs.projectId = 1 AND bs.moduleId = m.id AND bs.blockId = b.id AND bs.status = 'started' ) AS startedCount
+	(SELECT COUNT(*) FROM BlockUserStatus bs WHERE bs.projectId = ? AND bs.moduleId = m.id AND bs.blockId = b.id AND bs.status = 'completed' ) AS completedCount,
+	(SELECT COUNT(*) FROM BlockUserStatus bs WHERE bs.projectId = ? AND bs.moduleId = m.id AND bs.blockId = b.id AND bs.status = 'not_started' ) AS notStartedCount,
+	(SELECT COUNT(*) FROM BlockUserStatus bs WHERE bs.projectId = ? AND bs.moduleId = m.id AND bs.blockId = b.id AND bs.status = 'started' ) AS startedCount
 	FROM Flows f, Modules m, Blocks b, BlockModuleFlows bmf
 	WHERE 
 	f.projectId = ? AND
 	f.moduleId = m.id AND
 	m.id = bmf.moduleId AND
 	bmf.blockId = b.id
-	ORDER BY f.flowOrder, bmf.flowOrder`, projectID)
+	ORDER BY f.flowOrder, bmf.flowOrder`, projectID, projectID, projectID, projectID)
 	return results, err
 }
 
@@ -104,7 +103,7 @@ func ReportGetSubmissionCountForProject(projectID int64) ([]ReportSubmissionCoun
 	f.moduleId = bmf.moduleId AND
 	bmf.blockId = b.id AND
 	b.id = s.blockId
-	GROUP BY b.id
+	GROUP BY b.id, m.id, m.name, b.name, b.blockType, f.flowOrder, bmf.flowOrder
 	ORDER BY f.flowOrder, bmf.flowOrder`, projectID)
 	return results, err
 }
