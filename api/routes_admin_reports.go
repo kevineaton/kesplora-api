@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 )
@@ -37,14 +38,22 @@ func routeAdminReportGetCountOfLastUpdatedForProject(w http.ResponseWriter, r *h
 		sendAPIError(w, api_error_reports_get, err, map[string]string{})
 		return
 	}
+	// first, dedupe on the user if
+	deDupe := map[int64]int64{}
+	for _, r := range results {
+		if _, ok := deDupe[r.UserID]; !ok {
+			deDupe[r.UserID] = r.DaysAgo
+		}
+	}
+
 	// we need to convert this, since the results are a slice of maps of days ago to user id, so we group on days
 	processed := []ReportValueCount{}
 	holder := map[int64]int64{} // days ago -> count
-	for _, r := range results {
-		if _, ok := holder[r.DaysAgo]; !ok {
-			holder[r.DaysAgo] = 0
+	for _, daysAgo := range deDupe {
+		if _, ok := holder[daysAgo]; !ok {
+			holder[daysAgo] = 0
 		}
-		holder[r.DaysAgo]++
+		holder[daysAgo]++
 	}
 	for days, count := range holder {
 		processed = append(processed, ReportValueCount{Value: fmt.Sprintf("%d", days), Count: count})
@@ -208,9 +217,15 @@ func routeAdminReportExportProjectSubmissionResponses(w http.ResponseWriter, r *
 	responsesResult := [][]string{}
 
 	for _, question := range questions {
-		questionHeader = append(questionHeader, question.Question)
+		if question.QuestionType != BlockFormQuestionTypeExplanation {
+			questionHeader = append(questionHeader, question.Question)
+		}
 	}
 	responsesResult = append(responsesResult, questionHeader)
+
+	// so, because of the way the questions are set up, we need to loop over the responses in the submissions,
+	// match with the header, add to the  results, and then move on, which means this can be large and
+	// it's probably a good area to revisit
 
 	for _, submission := range submissions {
 		responses, _ := GetBlockFormSubmissionResponsesForSubmission(submission.ID)
@@ -218,26 +233,30 @@ func routeAdminReportExportProjectSubmissionResponses(w http.ResponseWriter, r *
 			// not worth putting, so continue
 			continue
 		}
-		// for each response, we need to make sure the response is in the same order as the question
-		responseSlice := []string{}
-		lastQuestion := ""
+		responsesSlice := []string{}
+
+		// first, we need to loop over the responses and for any of the multiples, we need to string concat them
+		// with pipes
+		questionsToResponses := map[string]string{}
 		for _, response := range responses {
-			// build the slice by matching up the question text
-			for i, q := range questionHeader {
-				if response.QuestionText == q {
-					// here's the kicker; for multiple choice, we separate with ;
-					responseText := response.TextResponse
-					if lastQuestion == q {
-						// we are on the same question, so we append on the last one
-						responseSlice[i] = fmt.Sprintf("%s;%s", responseSlice[i], responseText)
-					} else {
-						responseSlice = append(responseSlice, responseText)
-					}
-					lastQuestion = q
+			current, ok := questionsToResponses[response.QuestionText]
+			if !ok {
+				questionsToResponses[response.QuestionText] = response.TextResponse
+			} else {
+				// it's probably a multiple if there's a bunch in here
+				current += "|" + strings.Trim(response.TextResponse, "\t")
+				questionsToResponses[response.QuestionText] = current
+			}
+		}
+		for _, question := range questionHeader {
+			for questionText, responseText := range questionsToResponses {
+				if questionText == question {
+					responsesSlice = append(responsesSlice, strings.Trim(responseText, "\t"))
 				}
 			}
 		}
-		responsesResult = append(responsesResult, responseSlice)
+
+		responsesResult = append(responsesResult, responsesSlice)
 	}
 
 	// now create a csv
