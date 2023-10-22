@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/base64"
 	"errors"
+	"mime"
 	"net/http"
 	"strconv"
 
@@ -82,5 +83,9 @@ func routeParticipantDownloadFile(w http.ResponseWriter, r *http.Request) {
 		sendAPIJSONData(w, http.StatusOK, encoded)
 		return
 	}
-	sendAPIFileData(w, http.StatusOK, "octet/binary", data)
+	typeFromExtension := mime.TypeByExtension(file.FileType)
+	if typeFromExtension == "" {
+		typeFromExtension = "octet/bindary"
+	}
+	sendAPIFileData(w, http.StatusOK, typeFromExtension, data)
 }
