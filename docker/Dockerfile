@@ -1,5 +1,5 @@
-FROM golang:1.18.3 AS base
-ENV GOFLAGS -mod=vendor
+FROM golang:1.25 AS base
+ENV GOFLAGS=-mod=vendor
 
 RUN apt-get update && apt-get install -y git curl wait-for-it && rm -fr /var/lib/apt/lists/* && \
   mkdir -p /go/src/github.com/kevineaton
